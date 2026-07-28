@@ -1,0 +1,35 @@
+# Secrets & env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+service-account*.json
+
+# Backend
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.log
+dump.rdb
+
+# OSRM large generated files
+osrm-data/*.osrm*
+osrm-data/*.pbf
+
+# Frontend
+node_modules/
+.expo/
+android/build/
+ios/build/
+ios/Pods/
+*.jks
+*.p12
+*.mobileprovision
+
+# Misc
+.DS_Store
+.vscode/
+.idea/
