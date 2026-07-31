@@ -1,6 +1,5 @@
 import hashlib
 from datetime import datetime, timedelta, timezone
-
 from fastapi import APIRouter, Depends, HTTPException
 from jose import JWTError, jwt
 from sqlalchemy import delete, select
@@ -11,7 +10,12 @@ from app.config import ALGORITHM, REFRESH_TOKEN_EXPIRE_DAYS, SECRET_KEY
 from app.database import get_db
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
-from app.schemas.auth import AuthResponse, RefreshTokenRequest, RegisterRequest
+from app.schemas.auth import (
+    RegisterRequest,
+    AuthResponse,
+    RefreshTokenRequest,
+    LogoutRequest,
+)
 from app.utils.password import hash_password, verify_password
 from app.utils.auth import create_access_token, create_refresh_token
 
@@ -204,3 +208,33 @@ async def refresh_access_token(
         "refresh_token": new_refresh_token,
         "token_type": "bearer",
     }
+
+@router.post("/logout")
+async def logout(
+    payload: LogoutRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    token_hash = _hash_refresh_token(payload.refresh_token)
+
+    result = await db.execute(
+        select(RefreshToken).where(
+            RefreshToken.token_hash == token_hash
+        )
+    )
+
+    refresh_token = result.scalar_one_or_none()
+
+    if refresh_token is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Refresh token not found"
+        )
+
+    refresh_token.is_revoked = True
+
+    await db.commit()
+
+    return {
+        "message": "Logged out successfully"
+    }
+
