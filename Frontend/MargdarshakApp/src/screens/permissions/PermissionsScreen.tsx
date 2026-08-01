@@ -5,9 +5,11 @@ import { AuthStackParamList } from '../../navigation/types';
 import { Button } from '../../components/ui';
 import { colors, typography, spacing } from '../../theme';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Permissions'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'Permissions'> & {
+  onAuthSuccess?: () => void;
+};
 
-export const PermissionsScreen: React.FC<Props> = ({ navigation }) => {
+export const PermissionsScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
   const handleGrant = async () => {
     // TODO: Request actual permissions
     navigation.navigate('Success', { type: 'register' });

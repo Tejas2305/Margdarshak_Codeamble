@@ -14,7 +14,11 @@ import { PermissionsScreen } from '../screens/permissions/PermissionsScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
-export const AuthNavigator: React.FC = () => {
+interface AuthNavigatorProps {
+  onAuthSuccess: () => void;
+}
+
+export const AuthNavigator: React.FC<AuthNavigatorProps> = ({ onAuthSuccess }) => {
   return (
     <Stack.Navigator
       initialRouteName="Splash"
@@ -26,13 +30,21 @@ export const AuthNavigator: React.FC = () => {
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="AuthLanding" component={AuthLandingScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register">
+        {(props) => <RegisterScreen {...props} onAuthSuccess={onAuthSuccess} />}
+      </Stack.Screen>
+      <Stack.Screen name="Login">
+        {(props) => <LoginScreen {...props} onAuthSuccess={onAuthSuccess} />}
+      </Stack.Screen>
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-      <Stack.Screen name="Permissions" component={PermissionsScreen} />
-      <Stack.Screen name="Success" component={SuccessScreen} />
+      <Stack.Screen name="Permissions">
+        {(props) => <PermissionsScreen {...props} onAuthSuccess={onAuthSuccess} />}
+      </Stack.Screen>
+      <Stack.Screen name="Success">
+        {(props) => <SuccessScreen {...props} onAuthSuccess={onAuthSuccess} />}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 };

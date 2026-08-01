@@ -5,9 +5,11 @@ import { AuthStackParamList } from '../../navigation/types';
 import { Button } from '../../components/ui';
 import { colors, typography, spacing } from '../../theme';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Success'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'Success'> & {
+  onAuthSuccess?: () => void;
+};
 
-export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
+export const SuccessScreen: React.FC<Props> = ({ navigation, route, onAuthSuccess }) => {
   const { type } = route.params;
 
   const title = type === 'register' ? 'Account Created!' : 'Password Reset!';
@@ -18,11 +20,17 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.navigate('Login');
+      if (type === 'register' && onAuthSuccess) {
+        // User just registered, go to main app
+        onAuthSuccess();
+      } else {
+        // Password reset, go to login
+        navigation.navigate('Login');
+      }
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, [navigation, type, onAuthSuccess]);
 
   return (
     <View style={styles.container}>
@@ -31,8 +39,14 @@ export const SuccessScreen: React.FC<Props> = ({ navigation, route }) => {
       <Text style={styles.message}>{message}</Text>
 
       <Button
-        title="Continue to Login"
-        onPress={() => navigation.navigate('Login')}
+        title={type === 'register' ? 'Get Started' : 'Continue to Login'}
+        onPress={() => {
+          if (type === 'register' && onAuthSuccess) {
+            onAuthSuccess();
+          } else {
+            navigation.navigate('Login');
+          }
+        }}
         fullWidth
         style={{ marginTop: spacing.xl }}
       />

@@ -5,15 +5,26 @@ import { AuthStackParamList } from '../../navigation/types';
 import { Button, Input, PasswordInput } from '../../components/ui';
 import { colors, typography, spacing } from '../../theme';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'Login'> & {
+  onAuthSuccess?: () => void;
+};
 
-export const LoginScreen: React.FC<Props> = ({ navigation }) => {
+export const LoginScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    // TODO: Implement login logic
+    // TODO: Implement login logic with backend
     console.log('Login', { email, password });
+    
+    // For now, simulate successful login and navigate to main app
+    if (email && password) {
+      if (onAuthSuccess) {
+        onAuthSuccess();
+      }
+    } else {
+      alert('Please enter email and password');
+    }
   };
 
   return (

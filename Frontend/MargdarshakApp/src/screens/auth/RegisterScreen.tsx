@@ -5,9 +5,11 @@ import { AuthStackParamList } from '../../navigation/types';
 import { Button, Input, PasswordInput } from '../../components/ui';
 import { colors, typography, spacing } from '../../theme';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'Register'> & {
+  onAuthSuccess?: () => void;
+};
 
-export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
+export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
