@@ -1,83 +1,104 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View, Text, StyleSheet, Animated, StatusBar, Platform, Dimensions,
-} from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
-import { Button, SocialButton, Divider } from '../../components/ui';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { LinearGradient } from 'expo-linear-gradient';
 import { AuthStackParamList } from '../../navigation/types';
+import { Button, SocialButton, Divider } from '../../components/ui';
+import { colors, typography, spacing } from '../../theme';
 
-const { height } = Dimensions.get('window');
-type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'AuthLanding'> };
+type Props = NativeStackScreenProps<AuthStackParamList, 'AuthLanding'>;
 
-const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
-  const fade  = useRef(new Animated.Value(0)).current;
-  const slide = useRef(new Animated.Value(40)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fade,  { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slide, { toValue: 0, duration: 600, useNativeDriver: true }),
-    ]).start();
-  }, []);
-
+export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
   return (
-    <View style={s.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
+    <LinearGradient
+      colors={[colors.primary, colors.primaryDark]}
+      style={styles.container}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.logo}>🛡️</Text>
+          <Text style={styles.title}>Welcome to{'\n'}Margdarshak</Text>
+          <Text style={styles.subtitle}>Your safety companion on every journey</Text>
+        </View>
 
-      {/* Hero */}
-      <View style={s.hero}>
-        <Animated.View style={[s.heroContent, { opacity: fade, transform: [{ translateY: slide }] }]}>
-          <View style={s.logoBox}><Text style={s.logoEmoji}>🛡️</Text></View>
-          <Text style={s.appName}>Margdarshak</Text>
-          <View style={s.badge}>
-            <View style={s.badgeDot} />
-            <Text style={s.badgeText}>Public Safety Navigation</Text>
+        <View style={styles.authContainer}>
+          <SocialButton provider="google" onPress={() => console.log('Google Sign In')} />
+          <SocialButton provider="apple" onPress={() => console.log('Apple Sign In')} />
+
+          <Divider text="or" />
+
+          <Button
+            title="Sign Up with Email"
+            onPress={() => navigation.navigate('Register')}
+            variant="secondary"
+            fullWidth
+          />
+
+          <View style={styles.loginPrompt}>
+            <Text style={styles.loginText}>Already have an account? </Text>
+            <Button
+              title="Log In"
+              onPress={() => navigation.navigate('Login')}
+              variant="text"
+            />
           </View>
-        </Animated.View>
-      </View>
-
-      {/* Card */}
-      <Animated.View style={[s.card, { opacity: fade, transform: [{ translateY: slide }] }]}>
-        <Text style={s.welcomeTitle}>Welcome to{'\n'}Margdarshak</Text>
-        <Text style={s.welcomeSub}>Your trusted companion for safer journeys.</Text>
-
-        <Button title="Create Account" onPress={() => navigation.navigate('Register')} />
-        <View style={{ height: Spacing.md }} />
-        <Button title="Login" onPress={() => navigation.navigate('Login')} variant="outline" />
-
-        <Divider label="OR" />
-
-        <SocialButton title="Continue with Google" provider="google" onPress={() => {}} style={{ marginBottom: Spacing.md }} />
-        {Platform.OS === 'ios' && (
-          <SocialButton title="Continue with Apple" provider="apple" onPress={() => {}} />
-        )}
-
-        <Text style={s.terms}>
-          By continuing you agree to our{' '}
-          <Text style={s.termsLink}>Terms</Text> and{' '}
-          <Text style={s.termsLink}>Privacy Policy</Text>
-        </Text>
-      </Animated.View>
-    </View>
+        </View>
+      </ScrollView>
+    </LinearGradient>
   );
 };
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  hero: { height: height * 0.36, backgroundColor: Colors.primary, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, alignItems: 'center', justifyContent: 'center' },
-  heroContent: { alignItems: 'center' },
-  logoBox: { width: 80, height: 80, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.lg },
-  logoEmoji: { fontSize: 42 },
-  appName: { fontSize: Typography.fontSize2XL, fontWeight: Typography.fontWeightBold, color: Colors.textInverse, letterSpacing: 0.5, marginBottom: Spacing.md },
-  badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.full },
-  badgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.secondary, marginRight: Spacing.sm },
-  badgeText: { fontSize: Typography.fontSizeXS, color: 'rgba(255,255,255,0.85)', fontWeight: Typography.fontWeightMedium, letterSpacing: 0.5 },
-  card: { flex: 1, paddingHorizontal: Spacing.xxl, paddingTop: Spacing.xxxl, paddingBottom: Platform.OS === 'ios' ? 44 : Spacing.xxl },
-  welcomeTitle: { fontSize: Typography.fontSize2XL, fontWeight: Typography.fontWeightBold, color: Colors.text, lineHeight: 34, marginBottom: Spacing.sm },
-  welcomeSub: { fontSize: Typography.fontSizeMD, color: Colors.textSecondary, marginBottom: Spacing.xxl, lineHeight: 22 },
-  terms: { fontSize: Typography.fontSizeXS, color: Colors.textMuted, textAlign: 'center', lineHeight: 18, marginTop: Spacing.lg },
-  termsLink: { color: Colors.primary, fontWeight: Typography.fontWeightMedium },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    paddingTop: 80,
+    paddingBottom: spacing.xl,
+  },
+  header: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  logo: {
+    fontSize: 80,
+    marginBottom: spacing.lg,
+  },
+  title: {
+    fontSize: typography.h1,
+    fontWeight: '700',
+    color: colors.background,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  subtitle: {
+    fontSize: typography.body,
+    color: colors.background,
+    textAlign: 'center',
+    opacity: 0.9,
+  },
+  authContainer: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+    marginTop: spacing.xxl,
+  },
+  loginPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+  },
+  loginText: {
+    fontSize: typography.body,
+    color: colors.textSecondary,
+  },
 });
-
-export default AuthLandingScreen;
