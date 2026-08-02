@@ -9,13 +9,13 @@ import {
   Animated,
   StatusBar,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 
 const emergencyNumbers = [
-  { name: 'Police', number: '100', icon: '🚓' },
-  { name: 'Ambulance', number: '102', icon: '🚑' },
-  { name: 'Fire', number: '101', icon: '🚒' },
+  { name: 'Police', number: '100' },
+  { name: 'Medical', number: '102' },
+  { name: 'Fire', number: '101' },
 ];
 
 export default function SOSScreen() {
@@ -28,7 +28,7 @@ export default function SOSScreen() {
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.1,
+          toValue: 1.08,
           duration: 1000,
           useNativeDriver: true,
         }),
@@ -53,8 +53,8 @@ export default function SOSScreen() {
 
   const handleSOSPress = () => {
     Alert.alert(
-      'Activate Emergency SOS?',
-      'This will:\n• Call emergency services\n• Share your location\n• Alert your emergency contacts\n• Record audio/video',
+      'Activate Emergency Alert?',
+      'This will notify emergency services and your contacts.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -75,16 +75,9 @@ export default function SOSScreen() {
   };
 
   const triggerEmergency = () => {
-    // In production, this would:
-    // 1. Call emergency services
-    // 2. Share GPS location
-    // 3. Send SMS to emergency contacts
-    // 4. Start recording audio/video
-    // 5. Alert nearby app users
-    
     Alert.alert(
-      'SOS Activated!',
-      'Emergency services have been notified. Help is on the way.',
+      'Emergency Alert Sent',
+      'Your location has been shared with emergency contacts.',
       [
         {
           text: 'OK',
@@ -112,294 +105,219 @@ export default function SOSScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      
-      <LinearGradient
-        colors={isActivated ? ['#D32F2F', '#F44336'] : ['#FF5252', '#FF1744']}
-        style={styles.gradient}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Emergency SOS</Text>
-          <Text style={styles.headerSubtitle}>
-            {isActivated
-              ? 'Activating emergency response...'
-              : 'Press button to activate emergency alert'}
-          </Text>
-        </View>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-        {/* Main SOS Button */}
-        <View style={styles.sosContainer}>
-          {isActivated ? (
-            <View style={styles.countdownContainer}>
-              <Text style={styles.countdownText}>Activating in</Text>
-              <Text style={styles.countdownNumber}>{countdown}</Text>
-              <Text style={styles.countdownSubtext}>Tap cancel to abort</Text>
-            </View>
-          ) : (
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Emergency SOS</Text>
+        <Text style={styles.headerSubtitle}>
+          {isActivated
+            ? 'Activating emergency response'
+            : 'Press button to activate emergency alert'}
+        </Text>
+      </View>
+
+      {/* Main Content */}
+      <View style={styles.content}>
+        {isActivated ? (
+          <View style={styles.countdownContainer}>
+            <Text style={styles.countdownLabel}>Activating in</Text>
+            <Text style={styles.countdownNumber}>{countdown}</Text>
+            <TouchableOpacity style={styles.cancelButton} onPress={cancelSOS}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <TouchableOpacity
+              style={styles.sosButton}
+              onPress={handleSOSPress}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.sosText}>SOS</Text>
+              <Text style={styles.sosSubtext}>Press & Hold</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+      </View>
+
+      {/* Quick Actions */}
+      {!isActivated && (
+        <View style={styles.quickActions}>
+          <Text style={styles.sectionTitle}>Quick Call</Text>
+          <View style={styles.actionsGrid}>
+            {emergencyNumbers.map((service) => (
               <TouchableOpacity
-                style={styles.sosButton}
-                onPress={handleSOSPress}
-                activeOpacity={0.8}
+                key={service.number}
+                style={styles.actionCard}
+                onPress={() => callNumber(service.number, service.name)}
               >
-                <View style={styles.sosButtonInner}>
-                  <Text style={styles.sosIcon}>🚨</Text>
-                  <Text style={styles.sosText}>SOS</Text>
-                  <Text style={styles.sosSubtext}>Press & Hold</Text>
-                </View>
+                <Text style={styles.actionName}>{service.name}</Text>
+                <Text style={styles.actionNumber}>{service.number}</Text>
               </TouchableOpacity>
-            </Animated.View>
-          )}
+            ))}
+          </View>
         </View>
+      )}
 
-        {/* Cancel Button (shown when activated) */}
-        {isActivated && (
-          <TouchableOpacity style={styles.cancelButton} onPress={cancelSOS}>
-            <Text style={styles.cancelButtonText}>Cancel Emergency Alert</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Quick Actions */}
-        {!isActivated && (
-          <View style={styles.quickActions}>
-            <Text style={styles.quickActionsTitle}>Quick Actions</Text>
-            <View style={styles.quickActionsGrid}>
-              {emergencyNumbers.map((service) => (
-                <TouchableOpacity
-                  key={service.number}
-                  style={styles.quickActionCard}
-                  onPress={() => callNumber(service.number, service.name)}
-                >
-                  <Text style={styles.quickActionIcon}>{service.icon}</Text>
-                  <Text style={styles.quickActionName}>{service.name}</Text>
-                  <Text style={styles.quickActionNumber}>{service.number}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+      {/* Features Info */}
+      {!isActivated && (
+        <View style={styles.infoSection}>
+          <Text style={styles.infoTitle}>When activated:</Text>
+          <View style={styles.infoItem}>
+            <View style={styles.infoDot} />
+            <Text style={styles.infoText}>Calls emergency services</Text>
           </View>
-        )}
-
-        {/* Features List */}
-        {!isActivated && (
-          <View style={styles.features}>
-            <Text style={styles.featuresTitle}>When SOS is activated:</Text>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>📞</Text>
-              <Text style={styles.featureText}>Calls emergency services automatically</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>📍</Text>
-              <Text style={styles.featureText}>Shares your live location</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>📱</Text>
-              <Text style={styles.featureText}>Alerts your emergency contacts via SMS</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🎥</Text>
-              <Text style={styles.featureText}>Starts recording audio and video</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>👥</Text>
-              <Text style={styles.featureText}>Notifies nearby Margdarshak users</Text>
-            </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoDot} />
+            <Text style={styles.infoText}>Shares live location</Text>
           </View>
-        )}
-
-        {/* False Alarm Warning */}
-        {!isActivated && (
-          <View style={styles.warning}>
-            <Text style={styles.warningIcon}>⚠️</Text>
-            <Text style={styles.warningText}>
-              False emergency alerts may result in legal consequences. Only use in genuine
-              emergencies.
-            </Text>
+          <View style={styles.infoItem}>
+            <View style={styles.infoDot} />
+            <Text style={styles.infoText}>Alerts emergency contacts</Text>
           </View>
-        )}
-      </LinearGradient>
-    </View>
+          <View style={styles.infoItem}>
+            <View style={styles.infoDot} />
+            <Text style={styles.infoText}>Starts audio recording</Text>
+          </View>
+        </View>
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  gradient: {
-    flex: 1,
-    paddingTop: 50,
+    backgroundColor: theme.colors.background,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderLight,
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 8,
+    fontSize: theme.typography.h2,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
   },
   headerSubtitle: {
-    fontSize: 15,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    textAlign: 'center',
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
   },
-  sosContainer: {
+  content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingHorizontal: theme.spacing.lg,
   },
   sosButton: {
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: theme.colors.error,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 8,
-    borderColor: '#FFFFFF',
-  },
-  sosButtonInner: {
-    alignItems: 'center',
-  },
-  sosIcon: {
-    fontSize: 72,
-    marginBottom: 12,
+    ...theme.shadows.large,
   },
   sosText: {
-    fontSize: 42,
-    fontWeight: '800',
+    fontSize: 48,
+    fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: 4,
+    letterSpacing: 2,
   },
   sosSubtext: {
-    fontSize: 14,
+    fontSize: theme.typography.bodySmall,
     color: '#FFFFFF',
-    opacity: 0.8,
-    marginTop: 8,
+    marginTop: theme.spacing.sm,
+    opacity: 0.9,
   },
   countdownContainer: {
     alignItems: 'center',
   },
-  countdownText: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginBottom: 16,
+  countdownLabel: {
+    fontSize: theme.typography.h4,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.lg,
   },
   countdownNumber: {
-    fontSize: 120,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    lineHeight: 120,
-  },
-  countdownSubtext: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    marginTop: 16,
+    fontSize: 96,
+    fontWeight: '700',
+    color: theme.colors.error,
+    marginBottom: theme.spacing.xxl,
   },
   cancelButton: {
-    marginHorizontal: 20,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: 'center',
-    marginBottom: 20,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.xxl,
+    paddingVertical: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 2,
+    borderColor: theme.colors.error,
   },
   cancelButtonText: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#D32F2F',
+    fontSize: theme.typography.h5,
+    fontWeight: '600',
+    color: theme.colors.error,
   },
   quickActions: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xl,
   },
-  quickActionsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 12,
+  sectionTitle: {
+    fontSize: theme.typography.h5,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.lg,
   },
-  quickActionsGrid: {
+  actionsGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: theme.spacing.md,
   },
-  quickActionCard: {
+  actionCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: theme.colors.surfaceVariant,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.lg,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  quickActionIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+  actionName: {
+    fontSize: theme.typography.body,
+    fontWeight: '500',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
   },
-  quickActionName: {
-    fontSize: 13,
+  actionNumber: {
+    fontSize: theme.typography.h4,
     fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 4,
+    color: theme.colors.primary,
   },
-  quickActionNumber: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#FFFFFF',
+  infoSection: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.xxl,
   },
-  features: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+  infoTitle: {
+    fontSize: theme.typography.h6,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
   },
-  featuresTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 12,
-  },
-  featureItem: {
+  infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
-  featureIcon: {
-    fontSize: 20,
-    marginRight: 12,
+  infoDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.textSecondary,
+    marginRight: theme.spacing.md,
   },
-  featureText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    flex: 1,
-  },
-  warning: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  warningIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  warningText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    lineHeight: 18,
+  infoText: {
+    fontSize: theme.typography.body,
+    color: theme.colors.textSecondary,
   },
 });

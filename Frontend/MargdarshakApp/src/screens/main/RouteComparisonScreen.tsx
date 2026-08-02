@@ -79,9 +79,8 @@ export default function RouteComparisonScreen({ navigation }: any) {
 
       {/* Map Placeholder */}
       <View style={styles.mapPlaceholder}>
-        <Text style={styles.mapIcon}>🗺️</Text>
-        <Text style={styles.mapText}>Route Map</Text>
-        <Text style={styles.mapSubtext}>3 routes displayed with safety scores</Text>
+        <Text style={styles.mapText}>Route Comparison</Text>
+        <Text style={styles.mapSubtext}>Select the best route for your journey</Text>
         <View style={styles.routeColors}>
           <View style={styles.routeColorItem}>
             <View style={[styles.colorDot, { backgroundColor: '#4CAF50' }]} />
@@ -147,11 +146,11 @@ export default function RouteComparisonScreen({ navigation }: any) {
                 </View>
                 <View style={styles.scoreDetails}>
                   <View style={styles.routeStat}>
-                    <Text style={styles.routeStatIcon}>📏</Text>
+                    <Text style={styles.statLabel}>Distance</Text>
                     <Text style={styles.routeStatValue}>{route.distance}</Text>
                   </View>
                   <View style={styles.routeStat}>
-                    <Text style={styles.routeStatIcon}>⏱️</Text>
+                    <Text style={styles.statLabel}>Duration</Text>
                     <Text style={styles.routeStatValue}>{route.duration}</Text>
                   </View>
                 </View>
@@ -176,35 +175,27 @@ export default function RouteComparisonScreen({ navigation }: any) {
 
       {/* Start Navigation Button */}
       <View style={styles.bottomContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary, '#5E35B1']}
+        <TouchableOpacity
           style={styles.startButton}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+          onPress={handleStartNavigation}
+          activeOpacity={0.8}
         >
-          <TouchableOpacity
-            style={styles.startButtonInner}
-            onPress={handleStartNavigation}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.startButtonIcon}>🧭</Text>
-            <Text style={styles.startButtonText}>Start Navigation</Text>
-          </TouchableOpacity>
-        </LinearGradient>
+          <Text style={styles.startButtonText}>Start Navigation</Text>
+        </TouchableOpacity>
 
         {/* Route Info Summary */}
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
-            <Text style={styles.infoIcon}>🛡️</Text>
-            <Text style={styles.infoText}>
-              {routes[selectedRoute as keyof typeof routes].safetyScore}/10 Safety
+            <Text style={styles.infoLabel}>Safety Score</Text>
+            <Text style={styles.infoValue}>
+              {routes[selectedRoute as keyof typeof routes].safetyScore}/10
             </Text>
           </View>
           <View style={styles.infoDivider} />
           <View style={styles.infoItem}>
-            <Text style={styles.infoIcon}>🚗</Text>
-            <Text style={styles.infoText}>
-              {routes[selectedRoute as keyof typeof routes].duration} ETA
+            <Text style={styles.infoLabel}>ETA</Text>
+            <Text style={styles.infoValue}>
+              {routes[selectedRoute as keyof typeof routes].duration}
             </Text>
           </View>
         </View>
@@ -220,26 +211,22 @@ const styles = StyleSheet.create({
   },
   mapPlaceholder: {
     width,
-    height: height * 0.5,
+    height: height * 0.45,
     backgroundColor: '#E8F5E9',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
-  mapIcon: {
-    fontSize: 64,
-    marginBottom: 12,
-  },
   mapText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
     color: theme.colors.text,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   mapSubtext: {
     fontSize: 14,
     color: theme.colors.textSecondary,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   routeColors: {
     flexDirection: 'row',
@@ -296,7 +283,7 @@ const styles = StyleSheet.create({
   },
   routesScroll: {
     position: 'absolute',
-    top: height * 0.5 - 100,
+    top: height * 0.45 - 80,
     left: 0,
     right: 0,
   },
@@ -305,97 +292,99 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   routeCard: {
-    width: width * 0.7,
+    width: width * 0.65,
     backgroundColor: theme.colors.surface,
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 3,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
     borderColor: theme.colors.border,
-    ...theme.shadows.large,
+    ...theme.shadows.medium,
   },
   routeCardSelected: {
-    borderWidth: 4,
-    transform: [{ scale: 1.05 }],
+    borderWidth: 3,
+    transform: [{ scale: 1.02 }],
   },
   routeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   routeName: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
     color: theme.colors.text,
   },
   selectedBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectedBadgeText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
   },
   scoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 16,
+    gap: 12,
+    marginBottom: 12,
   },
   scoreCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    borderWidth: 4,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.background,
   },
   scoreValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '800',
   },
   scoreMax: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: theme.colors.textSecondary,
-    marginTop: -4,
+    marginTop: -2,
   },
   scoreDetails: {
     flex: 1,
-    gap: 8,
+    gap: 6,
   },
   routeStat: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
   },
-  routeStatIcon: {
-    fontSize: 18,
+  statLabel: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
   },
   routeStatValue: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: theme.colors.text,
   },
   features: {
-    gap: 8,
+    gap: 6,
   },
   feature: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   featureDot: {
-    fontSize: 12,
+    fontSize: 10,
     color: theme.colors.textSecondary,
   },
   featureText: {
-    fontSize: 13,
+    fontSize: 12,
     color: theme.colors.textSecondary,
     flex: 1,
   },
@@ -404,9 +393,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 6,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    height: 4,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   bottomContainer: {
     position: 'absolute',
@@ -415,50 +404,44 @@ const styles = StyleSheet.create({
     right: 16,
   },
   startButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: 12,
-    ...theme.shadows.large,
-  },
-  startButtonInner: {
-    flexDirection: 'row',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 16,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
-    gap: 12,
-  },
-  startButtonIcon: {
-    fontSize: 24,
+    marginBottom: 12,
+    ...theme.shadows.medium,
   },
   startButtonText: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   infoRow: {
     flexDirection: 'row',
     backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 12,
     alignItems: 'center',
     justifyContent: 'space-around',
   },
   infoItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
-  infoIcon: {
-    fontSize: 20,
+  infoLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: theme.colors.textSecondary,
   },
-  infoText: {
-    fontSize: 14,
-    fontWeight: '600',
+  infoValue: {
+    fontSize: 15,
+    fontWeight: '700',
     color: theme.colors.text,
   },
   infoDivider: {
     width: 1,
-    height: 24,
+    height: 32,
     backgroundColor: theme.colors.border,
   },
 });

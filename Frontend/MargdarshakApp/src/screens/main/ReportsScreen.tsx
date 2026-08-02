@@ -11,15 +11,16 @@ import {
   Alert,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 
 const incidentCategories = [
-  { id: '1', name: 'Theft', icon: '🚨', color: '#FF4444', description: 'Report theft or robbery' },
-  { id: '2', name: 'Harassment', icon: '⚠️', color: '#FF6B6B', description: 'Report harassment' },
-  { id: '3', name: 'Suspicious Activity', icon: '👁️', color: '#FFA500', description: 'Report suspicious behavior' },
-  { id: '4', name: 'Accident', icon: '🚗', color: '#FF8C00', description: 'Report traffic accident' },
-  { id: '5', name: 'Road Block', icon: '🚧', color: '#FFC107', description: 'Report road blockage' },
-  { id: '6', name: 'Fire', icon: '🔥', color: '#D32F2F', description: 'Report fire incident' },
+  { id: '1', name: 'Theft', initial: 'TH', color: '#EA4335', description: 'Report theft or robbery' },
+  { id: '2', name: 'Harassment', initial: 'HA', color: '#F44336', description: 'Report harassment' },
+  { id: '3', name: 'Suspicious Activity', initial: 'SA', color: '#FF9800', description: 'Report suspicious behavior' },
+  { id: '4', name: 'Accident', initial: 'AC', color: '#FF6F00', description: 'Report traffic accident' },
+  { id: '5', name: 'Road Block', initial: 'RB', color: '#FFA000', description: 'Report road blockage' },
+  { id: '6', name: 'Fire', initial: 'FI', color: '#D32F2F', description: 'Report fire incident' },
 ];
 
 export default function ReportsScreen() {
@@ -59,7 +60,7 @@ export default function ReportsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
       
       {/* Header */}
@@ -90,10 +91,10 @@ export default function ReportsScreen() {
                 <View
                   style={[
                     styles.categoryIconContainer,
-                    { backgroundColor: category.color + '20' },
+                    { backgroundColor: category.color },
                   ]}
                 >
-                  <Text style={styles.categoryIcon}>{category.icon}</Text>
+                  <Text style={styles.categoryInitial}>{category.initial}</Text>
                 </View>
                 <Text style={styles.categoryName}>{category.name}</Text>
                 <Text style={styles.categoryDescription}>{category.description}</Text>
@@ -111,12 +112,13 @@ export default function ReportsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Location</Text>
           <TouchableOpacity style={styles.locationCard}>
-            <Text style={styles.locationIcon}>📍</Text>
+            <View style={styles.locationIconCircle}>
+              <Text style={styles.locationIconText}>📍</Text>
+            </View>
             <View style={styles.locationDetails}>
               <Text style={styles.locationText}>{location}</Text>
               <Text style={styles.locationSubtext}>Tap to change location</Text>
             </View>
-            <Text style={styles.locationArrow}>→</Text>
           </TouchableOpacity>
         </View>
 
@@ -156,8 +158,7 @@ export default function ReportsScreen() {
                 style={styles.photoAdd}
                 onPress={() => Alert.alert('Photo Upload', 'Camera/Gallery picker will open here')}
               >
-                <Text style={styles.photoAddIcon}>📷</Text>
-                <Text style={styles.photoAddText}>Add Photo</Text>
+                <Text style={styles.photoAddText}>+ Add Photo</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -168,7 +169,9 @@ export default function ReportsScreen() {
         <View style={styles.section}>
           <View style={styles.anonymousCard}>
             <View style={styles.anonymousLeft}>
-              <Text style={styles.anonymousIcon}>🕵️</Text>
+              <View style={styles.anonymousIconCircle}>
+                <Text style={styles.anonymousIconText}>A</Text>
+              </View>
               <View style={styles.anonymousTextContainer}>
                 <Text style={styles.anonymousTitle}>Report Anonymously</Text>
                 <Text style={styles.anonymousDescription}>
@@ -196,7 +199,7 @@ export default function ReportsScreen() {
           False reports may result in account suspension.
         </Text>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -207,7 +210,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: theme.colors.surface,
-    paddingTop: 50,
+    paddingTop: 16,
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
@@ -258,15 +261,18 @@ const styles = StyleSheet.create({
     borderWidth: 3,
   },
   categoryIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
-  categoryIcon: {
-    fontSize: 32,
+  categoryInitial: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   categoryName: {
     fontSize: 15,
@@ -304,9 +310,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  locationIcon: {
-    fontSize: 28,
+  locationIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
+  },
+  locationIconText: {
+    fontSize: 20,
   },
   locationDetails: {
     flex: 1,
@@ -319,10 +333,6 @@ const styles = StyleSheet.create({
   },
   locationSubtext: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
-  },
-  locationArrow: {
-    fontSize: 24,
     color: theme.colors.textSecondary,
   },
   textArea: {
@@ -384,12 +394,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: theme.colors.surface,
   },
-  photoAddIcon: {
-    fontSize: 28,
-    marginBottom: 4,
-  },
   photoAddText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '600',
     color: theme.colors.textSecondary,
   },
@@ -413,9 +419,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  anonymousIcon: {
-    fontSize: 28,
+  anonymousIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
+  },
+  anonymousIconText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.colors.primary,
   },
   anonymousTextContainer: {
     flex: 1,

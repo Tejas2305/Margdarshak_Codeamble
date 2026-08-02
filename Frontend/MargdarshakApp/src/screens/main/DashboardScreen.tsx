@@ -11,6 +11,7 @@ import {
   Linking,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../theme';
 
@@ -18,10 +19,10 @@ const { width } = Dimensions.get('window');
 
 // Mock data
 const emergencyContacts = [
-  { id: '1', name: 'Police', number: '100', icon: '🚓', color: '#2196F3' },
-  { id: '2', name: 'Ambulance', number: '102', icon: '🚑', color: '#F44336' },
-  { id: '3', name: 'Fire', number: '101', icon: '🚒', color: '#FF5722' },
-  { id: '4', name: 'Women Helpline', number: '1091', icon: '👮‍♀️', color: '#9C27B0' },
+  { id: '1', name: 'Police', number: '100', initial: 'P', color: '#1A73E8' },
+  { id: '2', name: 'Ambulance', number: '102', initial: 'A', color: '#EA4335' },
+  { id: '3', name: 'Fire', number: '101', initial: 'F', color: '#FF6F00' },
+  { id: '4', name: 'Women Helpline', number: '1091', initial: 'W', color: '#9C27B0' },
 ];
 
 const recentAlerts = [
@@ -93,7 +94,7 @@ export default function DashboardScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
       
       {/* Header */}
@@ -231,8 +232,8 @@ export default function DashboardScreen() {
                 style={[styles.contactCard, { borderColor: contact.color }]}
                 onPress={() => handleCall(contact.number, contact.name)}
               >
-                <View style={[styles.contactIcon, { backgroundColor: contact.color + '20' }]}>
-                  <Text style={styles.contactEmoji}>{contact.icon}</Text>
+                <View style={[styles.contactIcon, { backgroundColor: contact.color }]}>
+                  <Text style={styles.contactInitial}>{contact.initial}</Text>
                 </View>
                 <Text style={styles.contactName}>{contact.name}</Text>
                 <Text style={[styles.contactNumber, { color: contact.color }]}>
@@ -259,7 +260,7 @@ export default function DashboardScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: theme.colors.surface,
-    paddingTop: 50,
+    paddingTop: 16,
     paddingBottom: 20,
     paddingHorizontal: 20,
     flexDirection: 'row',
@@ -523,15 +524,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   contactIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
-  contactEmoji: {
-    fontSize: 32,
+  contactInitial: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   contactName: {
     fontSize: 15,

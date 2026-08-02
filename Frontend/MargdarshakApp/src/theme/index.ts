@@ -1,73 +1,84 @@
+// Google Maps inspired professional theme
 export const colors = {
-  // Primary Brand Colors
-  primary: '#4A90E2',
-  primaryDark: '#357ABD',
-  primaryLight: '#7FB3EA',
+  // Primary - Google Maps Blue
+  primary: '#1A73E8',
+  primaryDark: '#1557B0',
+  primaryLight: '#4285F4',
   
-  // Safety Colors
-  safeGreen: '#4CAF50',
-  warningYellow: '#FFC107',
-  dangerRed: '#F44336',
+  // Safety Colors - Google style
+  success: '#34A853',
+  warning: '#FBBC04',
+  error: '#EA4335',
+  info: '#4285F4',
   
-  // Neutral Colors
+  // Background - Clean white
   background: '#FFFFFF',
-  surface: '#F5F5F5',
-  text: '#212121',
-  textSecondary: '#757575',
-  textLight: '#9E9E9E',
-  border: '#E0E0E0',
+  surface: '#FFFFFF',
+  surfaceVariant: '#F8F9FA',
   
-  // Dark Mode (for future)
-  backgroundDark: '#121212',
-  surfaceDark: '#1E1E1E',
+  // Text - Google's hierarchy
+  text: '#202124',
+  textSecondary: '#5F6368',
+  textTertiary: '#80868B',
+  textDisabled: '#BDC1C6',
+  textLight: '#80868B',
   
-  // Status
-  success: '#4CAF50',
-  error: '#F44336',
-  warning: '#FFC107',
-  info: '#2196F3',
+  // UI Elements - Subtle
+  border: '#DADCE0',
+  borderLight: '#E8EAED',
+  divider: '#F1F3F4',
+  
+  // Map specific
+  mapBackground: '#E8F5E9',
+  safeGreen: '#34A853',
+  dangerRed: '#EA4335',
+  
+  // Overlay
+  overlay: 'rgba(0, 0, 0, 0.4)',
+  overlayLight: 'rgba(0, 0, 0, 0.2)',
   
   // Social
-  google: '#DB4437',
+  google: '#EA4335',
   apple: '#000000',
   
   // Transparent
   transparent: 'transparent',
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  overlayLight: 'rgba(0, 0, 0, 0.3)',
 };
 
 export const typography = {
+  // Font Sizes - Google's scale
+  h1: 28,
+  h2: 24,
+  h3: 20,
+  h4: 18,
+  h5: 16,
+  h6: 14,
+  body: 14,
+  bodyLarge: 16,
+  bodySmall: 13,
+  caption: 12,
+  overline: 11,
+  button: 14,
+  
   // Font Families
   regular: 'System',
   medium: 'System',
   bold: 'System',
   
-  // Font Sizes
-  h1: 32,
-  h2: 28,
-  h3: 24,
-  h4: 20,
-  h5: 18,
-  h6: 16,
-  body: 16,
-  bodySmall: 14,
-  caption: 12,
-  button: 16,
-  
   // Line Heights
   lineHeightTight: 1.2,
-  lineHeightNormal: 1.5,
-  lineHeightRelaxed: 1.8,
+  lineHeightNormal: 1.4,
+  lineHeightRelaxed: 1.6,
 };
 
 export const spacing = {
   xs: 4,
   sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-  xxl: 48,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
 };
 
 export const borderRadius = {
@@ -75,30 +86,32 @@ export const borderRadius = {
   md: 8,
   lg: 12,
   xl: 16,
+  xxl: 20,
   full: 9999,
 };
 
 export const shadows = {
+  // Google's subtle elevation
   small: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  medium: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
-  medium: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
   large: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
   },
 };
 

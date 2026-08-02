@@ -28,8 +28,11 @@ export default function SettingsScreen({ navigation }: any) {
           text: 'Logout',
           style: 'destructive',
           onPress: () => {
-            // In production, clear auth tokens and navigate to auth
-            Alert.alert('Logged Out', 'You have been logged out successfully');
+            // Navigate to auth screens
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
           },
         },
       ]
@@ -74,14 +77,14 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Profile Section */}
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>👤</Text>
+            <Text style={styles.avatarText}>JD</Text>
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>John Doe</Text>
             <Text style={styles.profileEmail}>john.doe@example.com</Text>
           </View>
           <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editIcon}>✏️</Text>
+            <Text style={styles.editIcon}>✏</Text>
           </TouchableOpacity>
         </View>
 
@@ -91,7 +94,9 @@ export default function SettingsScreen({ navigation }: any) {
 
           <View style={styles.settingCard}>
             <View style={styles.settingLeft}>
-              <Text style={styles.settingIcon}>🔔</Text>
+              <View style={styles.iconCircle}>
+                <Text style={styles.iconText}>N</Text>
+              </View>
               <View style={styles.settingTextContainer}>
                 <Text style={styles.settingTitle}>Notifications</Text>
                 <Text style={styles.settingDescription}>
@@ -109,7 +114,9 @@ export default function SettingsScreen({ navigation }: any) {
 
           <View style={styles.settingCard}>
             <View style={styles.settingLeft}>
-              <Text style={styles.settingIcon}>📍</Text>
+              <View style={styles.iconCircle}>
+                <Text style={styles.iconText}>L</Text>
+              </View>
               <View style={styles.settingTextContainer}>
                 <Text style={styles.settingTitle}>Location Tracking</Text>
                 <Text style={styles.settingDescription}>
@@ -127,7 +134,9 @@ export default function SettingsScreen({ navigation }: any) {
 
           <View style={styles.settingCard}>
             <View style={styles.settingLeft}>
-              <Text style={styles.settingIcon}>🌙</Text>
+              <View style={styles.iconCircle}>
+                <Text style={styles.iconText}>M</Text>
+              </View>
               <View style={styles.settingTextContainer}>
                 <Text style={styles.settingTitle}>Night Mode Alerts</Text>
                 <Text style={styles.settingDescription}>
@@ -145,7 +154,9 @@ export default function SettingsScreen({ navigation }: any) {
 
           <View style={styles.settingCard}>
             <View style={styles.settingLeft}>
-              <Text style={styles.settingIcon}>🚨</Text>
+              <View style={styles.iconCircle}>
+                <Text style={styles.iconText}>A</Text>
+              </View>
               <View style={styles.settingTextContainer}>
                 <Text style={styles.settingTitle}>Auto Emergency Alert</Text>
                 <Text style={styles.settingDescription}>
@@ -166,7 +177,9 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Emergency Contacts</Text>
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>👨‍👩‍👧‍👦</Text>
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>E</Text>
+            </View>
             <Text style={styles.menuText}>Manage Emergency Contacts</Text>
             <Text style={styles.menuArrow}>→</Text>
           </TouchableOpacity>
@@ -178,7 +191,9 @@ export default function SettingsScreen({ navigation }: any) {
 
           <View style={styles.settingCard}>
             <View style={styles.settingLeft}>
-              <Text style={styles.settingIcon}>📊</Text>
+              <View style={styles.iconCircle}>
+                <Text style={styles.iconText}>D</Text>
+              </View>
               <View style={styles.settingTextContainer}>
                 <Text style={styles.settingTitle}>Share Anonymous Data</Text>
                 <Text style={styles.settingDescription}>
@@ -195,13 +210,17 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>🔒</Text>
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>P</Text>
+            </View>
             <Text style={styles.menuText}>Privacy Policy</Text>
             <Text style={styles.menuArrow}>→</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>📜</Text>
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>T</Text>
+            </View>
             <Text style={styles.menuText}>Terms of Service</Text>
             <Text style={styles.menuArrow}>→</Text>
           </TouchableOpacity>
@@ -212,21 +231,27 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>App Settings</Text>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>🌍</Text>
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>L</Text>
+            </View>
             <Text style={styles.menuText}>Language</Text>
             <Text style={styles.menuValue}>English</Text>
             <Text style={styles.menuArrow}>→</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>🎨</Text>
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>T</Text>
+            </View>
             <Text style={styles.menuText}>Theme</Text>
             <Text style={styles.menuValue}>Light</Text>
             <Text style={styles.menuArrow}>→</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>💾</Text>
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>S</Text>
+            </View>
             <Text style={styles.menuText}>Storage</Text>
             <Text style={styles.menuValue}>128 MB</Text>
             <Text style={styles.menuArrow}>→</Text>
@@ -238,25 +263,33 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>About</Text>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>ℹ️</Text>
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>i</Text>
+            </View>
             <Text style={styles.menuText}>App Version</Text>
             <Text style={styles.menuValue}>1.0.0</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>⭐</Text>
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>★</Text>
+            </View>
             <Text style={styles.menuText}>Rate Us</Text>
             <Text style={styles.menuArrow}>→</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>💬</Text>
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>F</Text>
+            </View>
             <Text style={styles.menuText}>Send Feedback</Text>
             <Text style={styles.menuArrow}>→</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>❓</Text>
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>?</Text>
+            </View>
             <Text style={styles.menuText}>Help & Support</Text>
             <Text style={styles.menuArrow}>→</Text>
           </TouchableOpacity>
@@ -267,7 +300,6 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>Danger Zone</Text>
 
           <TouchableOpacity style={styles.dangerButton} onPress={handleLogout}>
-            <Text style={styles.dangerIcon}>🚪</Text>
             <Text style={styles.dangerText}>Logout</Text>
           </TouchableOpacity>
 
@@ -275,14 +307,13 @@ export default function SettingsScreen({ navigation }: any) {
             style={[styles.dangerButton, styles.deleteButton]}
             onPress={handleDeleteAccount}
           >
-            <Text style={styles.dangerIcon}>⚠️</Text>
             <Text style={styles.dangerText}>Delete Account</Text>
           </TouchableOpacity>
         </View>
 
         <Text style={styles.footer}>
           Margdarshak v1.0.0{'\n'}
-          Made with ❤️ for safer communities
+          Made for safer communities
         </Text>
       </ScrollView>
     </View>
@@ -346,13 +377,15 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: theme.colors.primary + '20',
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
   },
   avatarText: {
-    fontSize: 32,
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   profileInfo: {
     flex: 1,
@@ -376,7 +409,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   editIcon: {
-    fontSize: 20,
+    fontSize: 16,
+    color: theme.colors.text,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  iconText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.primary,
   },
   section: {
     marginBottom: 28,
@@ -403,10 +451,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  settingIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
   settingTextContainer: {
     flex: 1,
   },
@@ -429,10 +473,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: theme.colors.border,
-  },
-  menuIcon: {
-    fontSize: 24,
-    marginRight: 12,
   },
   menuText: {
     flex: 1,
@@ -462,10 +502,6 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     borderColor: theme.colors.error,
-  },
-  dangerIcon: {
-    fontSize: 24,
-    marginRight: 12,
   },
   dangerText: {
     fontSize: 16,
