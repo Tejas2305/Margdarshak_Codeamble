@@ -14,14 +14,9 @@ export const LoginScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    // TODO: Implement login logic with backend
-    console.log('Login', { email, password });
-    
-    // For now, simulate successful login and navigate to main app
+    // Navigate to Main app (no backend, just frontend)
     if (email && password) {
-      if (onAuthSuccess) {
-        onAuthSuccess();
-      }
+      navigation.getParent()?.navigate('Main');
     } else {
       alert('Please enter email and password');
     }

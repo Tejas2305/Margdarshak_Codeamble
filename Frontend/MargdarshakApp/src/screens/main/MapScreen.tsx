@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   },
   mapText: {
     fontSize: theme.typography.h3,
-    fontWeight: '500',
+    fontWeight: '400',
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   emergencyIcon: {
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: '400',
     color: '#FFFFFF',
   },
   bottomSheet: {
@@ -226,12 +226,13 @@ const styles = StyleSheet.create({
   },
   safetyLabel: {
     fontSize: 12,
+    fontWeight: '400',
     color: theme.colors.textSecondary,
     marginBottom: 4,
   },
   safetyStatus: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '400',
     color: theme.colors.text,
   },
   scoreContainer: {
@@ -240,22 +241,23 @@ const styles = StyleSheet.create({
   },
   scoreValue: {
     fontSize: 40,
-    fontWeight: '800',
+    fontWeight: '300',
     color: theme.colors.success,
   },
   scoreLabel: {
     fontSize: 16,
+    fontWeight: '400',
     color: theme.colors.textSecondary,
     marginLeft: 4,
   },
   linkText: {
     fontSize: 14,
+    fontWeight: '400',
     color: theme.colors.primary,
-    fontWeight: '600',
   },
   sheetTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '400',
     color: theme.colors.text,
     marginBottom: 12,
   },
@@ -274,12 +276,13 @@ const styles = StyleSheet.create({
   },
   incidentType: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '400',
     color: theme.colors.text,
     marginBottom: 4,
   },
   incidentTime: {
     fontSize: 12,
+    fontWeight: '400',
     color: theme.colors.textSecondary,
   },
 });

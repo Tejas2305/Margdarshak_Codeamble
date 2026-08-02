@@ -28,10 +28,10 @@ export default function SettingsScreen({ navigation }: any) {
           text: 'Logout',
           style: 'destructive',
           onPress: () => {
-            // Navigate to auth screens
-            navigation.reset({
+            // Navigate back to Auth stack
+            navigation.getParent()?.reset({
               index: 0,
-              routes: [{ name: 'Login' }],
+              routes: [{ name: 'Auth' }],
             });
           },
         },

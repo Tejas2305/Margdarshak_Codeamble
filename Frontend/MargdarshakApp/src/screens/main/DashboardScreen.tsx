@@ -13,16 +13,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../../theme';
 
 const { width } = Dimensions.get('window');
 
-// Mock data
+// Mock data - Professional, no colors
 const emergencyContacts = [
-  { id: '1', name: 'Police', number: '100', initial: 'P', color: '#1A73E8' },
-  { id: '2', name: 'Ambulance', number: '102', initial: 'A', color: '#EA4335' },
-  { id: '3', name: 'Fire', number: '101', initial: 'F', color: '#FF6F00' },
-  { id: '4', name: 'Women Helpline', number: '1091', initial: 'W', color: '#9C27B0' },
+  { id: '1', name: 'Police', number: '100' },
+  { id: '2', name: 'Ambulance', number: '102' },
+  { id: '3', name: 'Fire', number: '101' },
+  { id: '4', name: 'Women Helpline', number: '1091' },
 ];
 
 const recentAlerts = [
@@ -30,22 +31,19 @@ const recentAlerts = [
     id: '1',
     type: 'High Crime Area',
     location: 'Downtown Plaza',
-    time: '2 hours ago',
-    severity: 'high',
+    time: '2h ago',
   },
   {
     id: '2',
     type: 'Road Closure',
     location: 'Main Street',
-    time: '4 hours ago',
-    severity: 'medium',
+    time: '4h ago',
   },
   {
     id: '3',
     type: 'Patrol Activity',
     location: 'City Center',
-    time: '6 hours ago',
-    severity: 'safe',
+    time: '6h ago',
   },
 ];
 
@@ -80,19 +78,6 @@ export default function DashboardScreen() {
     );
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'high':
-        return '#FF4444';
-      case 'medium':
-        return '#FFA500';
-      case 'safe':
-        return theme.colors.success;
-      default:
-        return theme.colors.primary;
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" />
@@ -100,12 +85,9 @@ export default function DashboardScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Safety Dashboard</Text>
-          <Text style={styles.headerSubtitle}>Track your safety metrics</Text>
+          <Text style={styles.headerTitle}>Dashboard</Text>
+          <Text style={styles.headerSubtitle}>Safety Overview</Text>
         </View>
-        <TouchableOpacity style={styles.settingsButton}>
-          <Text style={styles.settingsIcon}>⚙️</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -115,44 +97,32 @@ export default function DashboardScreen() {
       >
         {/* Safety Score Card */}
         <View style={styles.scoreCard}>
-          <LinearGradient
-            colors={['#4CAF50', '#81C784']}
-            style={styles.scoreGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Text style={styles.scoreLabel}>Personal Safety Score</Text>
-            <View style={styles.scoreCircleContainer}>
-              <View style={styles.scoreCircle}>
-                <Text style={styles.scoreValue}>{safetyScore}</Text>
-                <Text style={styles.scoreMax}>/{maxScore}</Text>
-              </View>
-            </View>
-            <View style={styles.scoreBar}>
-              <View style={[styles.scoreBarFill, { width: `${percentage}%` }]} />
-            </View>
-            <Text style={styles.scoreDescription}>
-              Excellent! You're in safe areas {percentage.toFixed(0)}% of the time
-            </Text>
-          </LinearGradient>
+          <Text style={styles.scoreLabel}>Safety Score</Text>
+          <View style={styles.scoreRow}>
+            <Text style={styles.scoreValue}>{safetyScore}</Text>
+            <Text style={styles.scoreMax}>/ {maxScore}</Text>
+          </View>
+          <View style={styles.scoreBar}>
+            <View style={[styles.scoreBarFill, { width: `${percentage}%` }]} />
+          </View>
+          <Text style={styles.scoreDescription}>
+            You're in safe areas {percentage.toFixed(0)}% of the time
+          </Text>
         </View>
 
         {/* Night Mode Toggle */}
-        <View style={styles.nightModeCard}>
-          <View style={styles.nightModeLeft}>
-            <Text style={styles.nightModeIcon}>🌙</Text>
-            <View style={styles.nightModeTextContainer}>
-              <Text style={styles.nightModeTitle}>Night Mode Alerts</Text>
-              <Text style={styles.nightModeDescription}>
-                Get extra safety alerts after dark
-              </Text>
-            </View>
+        <View style={styles.toggleCard}>
+          <View style={styles.toggleLeft}>
+            <Text style={styles.toggleTitle}>Night Mode Alerts</Text>
+            <Text style={styles.toggleDescription}>
+              Extra safety alerts after dark
+            </Text>
           </View>
           <Switch
             value={nightMode}
             onValueChange={setNightMode}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary + '60' }}
-            thumbColor={nightMode ? theme.colors.primary : '#f4f3f4'}
+            trackColor={{ false: '#E0E0E0', true: '#5B8DEE' }}
+            thumbColor={nightMode ? '#5B8DEE' : '#FFFFFF'}
           />
         </View>
 
@@ -206,16 +176,10 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Alerts</Text>
           {recentAlerts.map((alert) => (
-            <TouchableOpacity key={alert.id} style={styles.alertCard}>
-              <View
-                style={[
-                  styles.alertIndicator,
-                  { backgroundColor: getSeverityColor(alert.severity) },
-                ]}
-              />
-              <View style={styles.alertContent}>
+            <TouchableOpacity key={alert.id} style={styles.alertRow}>
+              <View style={styles.alertLeft}>
                 <Text style={styles.alertType}>{alert.type}</Text>
-                <Text style={styles.alertLocation}>📍 {alert.location}</Text>
+                <Text style={styles.alertLocation}>{alert.location}</Text>
               </View>
               <Text style={styles.alertTime}>{alert.time}</Text>
             </TouchableOpacity>
@@ -225,23 +189,16 @@ export default function DashboardScreen() {
         {/* Emergency Contacts */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Emergency Contacts</Text>
-          <View style={styles.contactsGrid}>
-            {emergencyContacts.map((contact) => (
-              <TouchableOpacity
-                key={contact.id}
-                style={[styles.contactCard, { borderColor: contact.color }]}
-                onPress={() => handleCall(contact.number, contact.name)}
-              >
-                <View style={[styles.contactIcon, { backgroundColor: contact.color }]}>
-                  <Text style={styles.contactInitial}>{contact.initial}</Text>
-                </View>
-                <Text style={styles.contactName}>{contact.name}</Text>
-                <Text style={[styles.contactNumber, { color: contact.color }]}>
-                  {contact.number}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {emergencyContacts.map((contact) => (
+            <TouchableOpacity
+              key={contact.id}
+              style={styles.contactRow}
+              onPress={() => handleCall(contact.number, contact.name)}
+            >
+              <Text style={styles.contactName}>{contact.name}</Text>
+              <Text style={styles.contactNumber}>{contact.number}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Stats Summary */}
@@ -267,39 +224,27 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingTop: 16,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: '#F0F0F0',
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: '400',
+    color: '#000000',
+    marginBottom: 2,
+    letterSpacing: -0.3,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
-  },
-  settingsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: theme.colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  settingsIcon: {
-    fontSize: 24,
+    fontWeight: '400',
+    color: '#666666',
   },
   scrollView: {
     flex: 1,
@@ -309,145 +254,122 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   scoreCard: {
-    borderRadius: 24,
-    overflow: 'hidden',
-    marginBottom: 20,
-    ...theme.shadows.large,
-  },
-  scoreGradient: {
-    padding: 24,
-  },
-  scoreLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    opacity: 0.9,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 16,
   },
-  scoreCircleContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
+  scoreLabel: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#666666',
+    marginBottom: 12,
   },
-  scoreCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderWidth: 8,
-    borderColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 16,
   },
   scoreValue: {
     fontSize: 48,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontWeight: '300',
+    color: '#333333',
+    letterSpacing: -1,
   },
   scoreMax: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginTop: -8,
+    fontWeight: '300',
+    color: '#999999',
+    marginLeft: 4,
   },
   scoreBar: {
-    height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 4,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
     overflow: 'hidden',
     marginBottom: 12,
   },
   scoreBarFill: {
     height: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 4,
+    backgroundColor: '#5B8DEE',
+    borderRadius: 2,
   },
   scoreDescription: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    opacity: 0.9,
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#666666',
+    lineHeight: 18,
   },
-  nightModeCard: {
+  toggleCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
     padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    marginBottom: 24,
   },
-  nightModeLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  toggleLeft: {
     flex: 1,
+    marginRight: 16,
   },
-  nightModeIcon: {
-    fontSize: 28,
-    marginRight: 12,
-  },
-  nightModeTextContainer: {
-    flex: 1,
-  },
-  nightModeTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.text,
+  toggleTitle: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#000000',
     marginBottom: 4,
   },
-  nightModeDescription: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
+  toggleDescription: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#666666',
+    lineHeight: 18,
   },
   section: {
-    marginBottom: 28,
+    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: theme.colors.text,
+    fontSize: 17,
+    fontWeight: '400',
+    color: '#000000',
+    marginBottom: 12,
   },
   viewToggle: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 8,
+    padding: 2,
   },
   toggleButton: {
     paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    borderRadius: 6,
   },
   toggleButtonActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#FFFFFF',
   },
   toggleText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: theme.colors.textSecondary,
+    fontWeight: '400',
+    color: '#666666',
   },
   toggleTextActive: {
-    color: '#FFFFFF',
+    color: '#000000',
   },
   chart: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
     padding: 16,
     height: 180,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   chartBar: {
     flex: 1,
@@ -461,114 +383,93 @@ const styles = StyleSheet.create({
   },
   chartBarFill: {
     width: '100%',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 8,
+    backgroundColor: '#5B8DEE',
+    borderRadius: 4,
     alignItems: 'center',
     paddingTop: 4,
   },
   chartBarValue: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '400',
     color: '#FFFFFF',
   },
   chartBarLabel: {
     fontSize: 11,
-    fontWeight: '600',
-    color: theme.colors.textSecondary,
+    fontWeight: '400',
+    color: '#999999',
     marginTop: 8,
   },
-  alertCard: {
+  alertRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 10,
+    marginBottom: 8,
   },
-  alertIndicator: {
-    width: 8,
-    height: 40,
-    borderRadius: 4,
-    marginRight: 12,
-  },
-  alertContent: {
+  alertLeft: {
     flex: 1,
   },
   alertType: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: theme.colors.text,
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#000000',
     marginBottom: 4,
   },
   alertLocation: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    fontWeight: '400',
+    color: '#666666',
   },
   alertTime: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    fontWeight: '400',
+    color: '#999999',
   },
-  contactsGrid: {
+  contactRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  contactCard: {
-    width: '48%',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 16,
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 2,
-  },
-  contactIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  contactInitial: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 10,
+    marginBottom: 8,
   },
   contactName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 4,
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#000000',
   },
   contactNumber: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#666666',
   },
   statsContainer: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 8,
   },
   statCard: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   statValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: theme.colors.primary,
+    fontSize: 32,
+    fontWeight: '300',
+    color: '#000000',
     marginBottom: 4,
+    letterSpacing: -0.5,
   },
   statLabel: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    fontWeight: '400',
+    color: '#666666',
     textAlign: 'center',
   },
 });

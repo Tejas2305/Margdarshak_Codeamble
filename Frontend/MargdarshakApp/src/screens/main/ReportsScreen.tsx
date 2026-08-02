@@ -12,15 +12,16 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../../theme';
 
 const incidentCategories = [
-  { id: '1', name: 'Theft', initial: 'TH', color: '#EA4335', description: 'Report theft or robbery' },
-  { id: '2', name: 'Harassment', initial: 'HA', color: '#F44336', description: 'Report harassment' },
-  { id: '3', name: 'Suspicious Activity', initial: 'SA', color: '#FF9800', description: 'Report suspicious behavior' },
-  { id: '4', name: 'Accident', initial: 'AC', color: '#FF6F00', description: 'Report traffic accident' },
-  { id: '5', name: 'Road Block', initial: 'RB', color: '#FFA000', description: 'Report road blockage' },
-  { id: '6', name: 'Fire', initial: 'FI', color: '#D32F2F', description: 'Report fire incident' },
+  { id: '1', name: 'Theft', icon: 'bag-personal' as const, color: '#5B8DEE', description: 'Report theft or robbery' },
+  { id: '2', name: 'Harassment', icon: 'account-alert' as const, color: '#E85D75', description: 'Report harassment' },
+  { id: '3', name: 'Suspicious Activity', icon: 'eye-outline' as const, color: '#F59E42', description: 'Report suspicious behavior' },
+  { id: '4', name: 'Accident', icon: 'car-crash' as const, color: '#E8684A', description: 'Report traffic accident' },
+  { id: '5', name: 'Road Block', icon: 'road-variant' as const, color: '#9B87C7', description: 'Report road blockage' },
+  { id: '6', name: 'Fire', icon: 'fire' as const, color: '#E85D5D', description: 'Report fire incident' },
 ];
 
 export default function ReportsScreen() {
@@ -84,17 +85,15 @@ export default function ReportsScreen() {
                 style={[
                   styles.categoryCard,
                   selectedCategory === category.id && styles.categoryCardSelected,
-                  { borderColor: category.color },
                 ]}
                 onPress={() => setSelectedCategory(category.id)}
               >
-                <View
-                  style={[
-                    styles.categoryIconContainer,
-                    { backgroundColor: category.color },
-                  ]}
-                >
-                  <Text style={styles.categoryInitial}>{category.initial}</Text>
+                <View style={[styles.categoryIconContainer, { backgroundColor: category.color + '15' }]}>
+                  <MaterialCommunityIcons 
+                    name={category.icon as any} 
+                    size={28} 
+                    color={category.color} 
+                  />
                 </View>
                 <Text style={styles.categoryName}>{category.name}</Text>
                 <Text style={styles.categoryDescription}>{category.description}</Text>
@@ -112,9 +111,6 @@ export default function ReportsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Location</Text>
           <TouchableOpacity style={styles.locationCard}>
-            <View style={styles.locationIconCircle}>
-              <Text style={styles.locationIconText}>📍</Text>
-            </View>
             <View style={styles.locationDetails}>
               <Text style={styles.locationText}>{location}</Text>
               <Text style={styles.locationSubtext}>Tap to change location</Text>
@@ -169,9 +165,6 @@ export default function ReportsScreen() {
         <View style={styles.section}>
           <View style={styles.anonymousCard}>
             <View style={styles.anonymousLeft}>
-              <View style={styles.anonymousIconCircle}>
-                <Text style={styles.anonymousIconText}>A</Text>
-              </View>
               <View style={styles.anonymousTextContainer}>
                 <Text style={styles.anonymousTitle}>Report Anonymously</Text>
                 <Text style={styles.anonymousDescription}>
@@ -179,11 +172,11 @@ export default function ReportsScreen() {
                 </Text>
               </View>
             </View>
-            <Switch
+          <Switch
               value={isAnonymous}
               onValueChange={setIsAnonymous}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary + '60' }}
-              thumbColor={isAnonymous ? theme.colors.primary : '#f4f3f4'}
+              trackColor={{ false: '#E0E0E0', true: '#5B8DEE' }}
+              thumbColor={isAnonymous ? '#5B8DEE' : '#FFFFFF'}
             />
           </View>
         </View>
@@ -206,25 +199,27 @@ export default function ReportsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingTop: 16,
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: '#F0F0F0',
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: '400',
+    color: '#333333',
+    marginBottom: 2,
+    letterSpacing: -0.3,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    fontWeight: '400',
+    color: '#666666',
   },
   scrollView: {
     flex: 1,
@@ -234,12 +229,12 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   section: {
-    marginBottom: 28,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.colors.text,
+    fontSize: 17,
+    fontWeight: '400',
+    color: '#333333',
     marginBottom: 12,
   },
   categoriesGrid: {
@@ -249,105 +244,87 @@ const styles = StyleSheet.create({
   },
   categoryCard: {
     width: '48%',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderColor: '#F0F0F0',
     position: 'relative',
   },
   categoryCardSelected: {
-    borderWidth: 3,
+    borderWidth: 2,
+    borderColor: '#555555',
   },
   categoryIconContainer: {
     width: 56,
     height: 56,
     borderRadius: 28,
+    backgroundColor: '#E8E8E8',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
-  categoryInitial: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-  },
   categoryName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: theme.colors.text,
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#333333',
     marginBottom: 4,
     textAlign: 'center',
   },
   categoryDescription: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#666666',
     textAlign: 'center',
   },
   selectedBadge: {
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectedBadgeText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '400',
   },
   locationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  locationIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.primary + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  locationIconText: {
-    fontSize: 20,
   },
   locationDetails: {
     flex: 1,
   },
   locationText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.text,
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#333333',
     marginBottom: 4,
   },
   locationSubtext: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#666666',
   },
   textArea: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
     padding: 16,
-    fontSize: 15,
-    color: theme.colors.text,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#333333',
     minHeight: 140,
   },
   charCount: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    fontWeight: '400',
+    color: '#999999',
     textAlign: 'right',
     marginTop: 8,
   },
@@ -374,95 +351,80 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: theme.colors.error,
+    backgroundColor: '#555555',
     alignItems: 'center',
     justifyContent: 'center',
   },
   photoRemoveText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '400',
   },
   photoAdd: {
     width: 80,
     height: 80,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderColor: '#F0F0F0',
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#F8F9FA',
   },
   photoAddText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.textSecondary,
+    fontWeight: '400',
+    color: '#666666',
   },
   photoHint: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    fontWeight: '400',
+    color: '#999999',
     marginTop: 8,
   },
   anonymousCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   anonymousLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
     flex: 1,
-  },
-  anonymousIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.primary + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  anonymousIconText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.colors.primary,
+    marginRight: 16,
   },
   anonymousTextContainer: {
     flex: 1,
   },
   anonymousTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.text,
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#333333',
     marginBottom: 4,
   },
   anonymousDescription: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#666666',
   },
   submitButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 16,
-    paddingVertical: 18,
+    backgroundColor: '#5B8DEE',
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
-    ...theme.shadows.medium,
+    marginBottom: 16,
   },
   submitButtonText: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '400',
     color: '#FFFFFF',
   },
   helpText: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    fontWeight: '400',
+    color: '#999999',
     textAlign: 'center',
-    marginTop: 16,
     lineHeight: 18,
     paddingHorizontal: 20,
   },
