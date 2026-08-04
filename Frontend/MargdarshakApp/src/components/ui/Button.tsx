@@ -8,7 +8,8 @@ import {
   TextStyle,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeColors, typography, spacing, borderRadius } from '../../theme';
 
 interface ButtonProps {
   title: string;
@@ -33,23 +34,27 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
 }) => {
+  const { isDark } = useTheme();
+  const colors = getThemeColors(isDark);
+  
   const buttonStyles = [
     styles.base,
     styles[size],
     fullWidth && styles.fullWidth,
-    variant === 'secondary' && styles.secondary,
-    variant === 'outline' && styles.outline,
-    variant === 'text' && styles.text,
+    variant === 'secondary' && { backgroundColor: colors.surface },
+    variant === 'outline' && { backgroundColor: colors.transparent, borderWidth: 1.5, borderColor: colors.primary },
+    variant === 'text' && { backgroundColor: colors.transparent },
     disabled && styles.disabled,
     style,
   ];
 
   const textStyles = [
     styles.baseText,
+    { color: colors.background },
     styles[`${size}Text`],
-    variant === 'secondary' && styles.secondaryText,
-    variant === 'outline' && styles.outlineText,
-    variant === 'text' && styles.textText,
+    variant === 'secondary' && { color: colors.text },
+    variant === 'outline' && { color: colors.primary },
+    variant === 'text' && { color: colors.primary },
     disabled && styles.disabledText,
     textStyle,
   ];
@@ -118,17 +123,6 @@ const styles = StyleSheet.create({
   fullWidth: {
     width: '100%',
   },
-  secondary: {
-    backgroundColor: colors.surface,
-  },
-  outline: {
-    backgroundColor: colors.transparent,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-  },
-  text: {
-    backgroundColor: colors.transparent,
-  },
   disabled: {
     opacity: 0.5,
   },
@@ -141,7 +135,6 @@ const styles = StyleSheet.create({
   baseText: {
     fontSize: typography.button,
     fontWeight: '600',
-    color: colors.background,
   },
   smallText: {
     fontSize: typography.bodySmall,
@@ -151,15 +144,6 @@ const styles = StyleSheet.create({
   },
   largeText: {
     fontSize: typography.h6,
-  },
-  secondaryText: {
-    color: colors.text,
-  },
-  outlineText: {
-    color: colors.primary,
-  },
-  textText: {
-    color: colors.primary,
   },
   disabledText: {
     opacity: 0.7,

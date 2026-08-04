@@ -1,55 +1,75 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/types';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeColors } from '../../theme';
 import { colors, typography, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'AuthLanding'>;
 
 export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
+  const { isDark, toggleTheme } = useTheme();
+  const colors = getThemeColors(isDark);
+  
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      
+      {/* Theme Toggle - Top Right */}
+      <TouchableOpacity 
+        style={[styles.themeToggle, { backgroundColor: colors.surfaceVariant }]}
+        onPress={toggleTheme}
+      >
+        <MaterialCommunityIcons 
+          name={isDark ? "weather-sunny" : "weather-night"} 
+          size={24} 
+          color={colors.text} 
+        />
+      </TouchableOpacity>
+      
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <MaterialCommunityIcons name="shield-check" size={64} color="#5B8DEE" />
-          </View>
-          <Text style={styles.title}>Margdarshak</Text>
-          <Text style={styles.subtitle}>Your safety companion on every journey</Text>
+          <Image 
+            source={require('../../../assets/icon.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={[styles.title, { color: colors.text }]}>Margdarshak</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your safety companion on every journey</Text>
         </View>
 
         <View style={styles.authContainer}>
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={[styles.primaryButton, { backgroundColor: colors.primary }]}
             onPress={() => navigation.navigate('Register')}
           >
             <Text style={styles.primaryButtonText}>Sign Up with Email</Text>
           </TouchableOpacity>
 
           <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textSecondary }]}>or</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
 
           <View style={styles.socialButtons}>
-            <TouchableOpacity style={styles.socialButton}>
-              <MaterialCommunityIcons name="google" size={24} color="#333333" />
+            <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+              <MaterialCommunityIcons name="google" size={24} color={colors.text} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <MaterialCommunityIcons name="apple" size={24} color="#333333" />
+            <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+              <MaterialCommunityIcons name="apple" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.loginPrompt}>
-            <Text style={styles.loginText}>Already have an account? </Text>
+            <Text style={[styles.loginText, { color: colors.textSecondary }]}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>Log In</Text>
+              <Text style={[styles.loginLink, { color: colors.primary }]}>Log In</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -61,7 +81,17 @@ export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+  },
+  themeToggle: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     flexGrow: 1,
@@ -73,11 +103,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
   },
+  logo: {
+    width: 180,
+    height: 180,
+    marginBottom: 24,
+  },
   logoContainer: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#5B8DEE15',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
@@ -85,7 +119,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '400',
-    color: '#333333',
     textAlign: 'center',
     marginBottom: 12,
     letterSpacing: -0.5,
@@ -93,7 +126,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     fontWeight: '400',
-    color: '#666666',
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -103,7 +135,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   primaryButton: {
-    backgroundColor: '#5B8DEE',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -122,12 +153,10 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E0E0E0',
   },
   dividerText: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#999999',
     paddingHorizontal: 16,
   },
   socialButtons: {
@@ -140,9 +169,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -154,11 +181,9 @@ const styles = StyleSheet.create({
   loginText: {
     fontSize: 15,
     fontWeight: '400',
-    color: '#666666',
   },
   loginLink: {
     fontSize: 15,
     fontWeight: '400',
-    color: '#5B8DEE',
   },
 });

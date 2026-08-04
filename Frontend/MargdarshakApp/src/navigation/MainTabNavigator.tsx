@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet } from 'react-native';
-import { theme } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
+import { getThemeColors } from '../theme';
 
 // Import screens
 import MapScreen from '../screens/main/MapScreen';
@@ -12,36 +13,36 @@ import SOSScreen from '../screens/main/SOSScreen';
 const Tab = createBottomTabNavigator();
 
 // Icon components (professional, non-emoji)
-const MapIcon = ({ focused }: { focused: boolean }) => (
+const MapIcon = ({ focused, colors }: { focused: boolean; colors: any }) => (
   <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-    <Text style={[styles.iconSymbol, focused && styles.iconSymbolActive]}>○</Text>
+    <Text style={[styles.iconSymbol, { color: focused ? colors.primary : colors.textSecondary }]}>○</Text>
   </View>
 );
 
-const ReportsIcon = ({ focused }: { focused: boolean }) => (
+const ReportsIcon = ({ focused, colors }: { focused: boolean; colors: any }) => (
   <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-    <Text style={[styles.iconSymbol, focused && styles.iconSymbolActive]}>□</Text>
+    <Text style={[styles.iconSymbol, { color: focused ? colors.primary : colors.textSecondary }]}>□</Text>
   </View>
 );
 
-const DashboardIcon = ({ focused }: { focused: boolean }) => (
+const DashboardIcon = ({ focused, colors }: { focused: boolean; colors: any }) => (
   <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-    <Text style={[styles.iconSymbol, focused && styles.iconSymbolActive]}>≡</Text>
+    <Text style={[styles.iconSymbol, { color: focused ? colors.primary : colors.textSecondary }]}>≡</Text>
   </View>
 );
 
-const SOSIcon = ({ focused }: { focused: boolean }) => (
+const SOSIcon = ({ focused, colors }: { focused: boolean; colors: any }) => (
   <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-    <Text style={[styles.iconSymbol, focused && styles.iconSymbolActive]}>!</Text>
+    <Text style={[styles.iconSymbol, { color: focused ? colors.primary : colors.textSecondary }]}>!</Text>
   </View>
 );
 
 // Professional tab bar with icon and label
-const TabIcon = ({ focused, label, IconComponent }: { focused: boolean; label: string; IconComponent: React.ComponentType<{ focused: boolean }> }) => (
+const TabIcon = ({ focused, label, IconComponent, colors }: { focused: boolean; label: string; IconComponent: React.ComponentType<{ focused: boolean; colors: any }>; colors: any }) => (
   <View style={styles.tabItem}>
-    <IconComponent focused={focused} />
+    <IconComponent focused={focused} colors={colors} />
     <Text 
-      style={[styles.label, focused && styles.labelActive]}
+      style={[styles.label, { color: focused ? colors.primary : colors.textSecondary }]}
       numberOfLines={1}
       ellipsizeMode="clip"
     >
@@ -51,14 +52,30 @@ const TabIcon = ({ focused, label, IconComponent }: { focused: boolean; label: s
 );
 
 export default function MainTabNavigator() {
+  const { isDark } = useTheme();
+  const colors = getThemeColors(isDark);
+  
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          height: 72,
+          paddingBottom: 8,
+          paddingTop: 8,
+          paddingHorizontal: 8,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+        },
         tabBarShowLabel: false,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
       }}
     >
       <Tab.Screen
@@ -66,7 +83,7 @@ export default function MainTabNavigator() {
         component={MapScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} label="Map" IconComponent={MapIcon} />
+            <TabIcon focused={focused} label="Map" IconComponent={MapIcon} colors={colors} />
           ),
         }}
       />
@@ -75,7 +92,7 @@ export default function MainTabNavigator() {
         component={ReportsScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} label="Reports" IconComponent={ReportsIcon} />
+            <TabIcon focused={focused} label="Reports" IconComponent={ReportsIcon} colors={colors} />
           ),
         }}
       />
@@ -84,7 +101,7 @@ export default function MainTabNavigator() {
         component={DashboardScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} label="Dashboard" IconComponent={DashboardIcon} />
+            <TabIcon focused={focused} label="Dashboard" IconComponent={DashboardIcon} colors={colors} />
           ),
         }}
       />
@@ -93,7 +110,7 @@ export default function MainTabNavigator() {
         component={SOSScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} label="SOS" IconComponent={SOSIcon} />
+            <TabIcon focused={focused} label="SOS" IconComponent={SOSIcon} colors={colors} />
           ),
         }}
       />
@@ -102,20 +119,6 @@ export default function MainTabNavigator() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: theme.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.borderLight,
-    height: 72,
-    paddingBottom: 8,
-    paddingTop: 8,
-    paddingHorizontal: 8,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -132,27 +135,23 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   iconContainerActive: {
-    backgroundColor: theme.colors.primary + '15',
+    backgroundColor: '#5B8DEE15',
   },
   iconSymbol: {
     fontSize: 22,
     fontWeight: '600',
-    color: theme.colors.textSecondary,
   },
   iconSymbolActive: {
-    color: theme.colors.primary,
     fontWeight: '700',
   },
   label: {
     fontSize: 11,
-    color: theme.colors.textSecondary,
     fontWeight: '500',
     letterSpacing: 0.2,
     textAlign: 'center',
     width: '100%',
   },
   labelActive: {
-    color: theme.colors.primary,
     fontWeight: '600',
   },
 });

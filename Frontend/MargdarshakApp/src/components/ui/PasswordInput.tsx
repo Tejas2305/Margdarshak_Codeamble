@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, Text } from 'react-native';
 import { Input } from './Input';
-import { colors } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeColors } from '../../theme';
 
 interface PasswordInputProps {
   label?: string;
@@ -18,6 +19,8 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   placeholder = 'Enter your password',
   error,
 }) => {
+  const { isDark } = useTheme();
+  const colors = getThemeColors(isDark);
   const [showPassword, setShowPassword] = useState(false);
 
   return (

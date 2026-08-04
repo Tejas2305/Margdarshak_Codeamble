@@ -4,6 +4,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/types';
 import { Button, Input, PasswordInput } from '../../components/ui';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeColors } from '../../theme';
 import { colors, typography, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'> & {
@@ -11,6 +13,9 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Register'> & {
 };
 
 export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
+  const { isDark, toggleTheme } = useTheme();
+  const colors = getThemeColors(isDark);
+  
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,21 +25,33 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      
+      {/* Theme Toggle - Top Right */}
+      <TouchableOpacity 
+        style={[styles.themeToggle, { backgroundColor: colors.surfaceVariant }]}
+        onPress={toggleTheme}
+      >
+        <MaterialCommunityIcons 
+          name={isDark ? "weather-sunny" : "weather-night"} 
+          size={22} 
+          color={colors.text} 
+        />
+      </TouchableOpacity>
       
       {/* Back Button */}
       <TouchableOpacity 
-        style={styles.backButton}
+        style={[styles.backButton, { backgroundColor: colors.surfaceVariant }]}
         onPress={() => navigation.goBack()}
       >
-        <MaterialCommunityIcons name="arrow-left" size={24} color="#333333" />
+        <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Sign up to get started</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Sign up to get started</Text>
         </View>
 
         <View style={styles.form}>
@@ -59,16 +76,16 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
           />
 
           <TouchableOpacity
-            style={styles.signupButton}
+            style={[styles.signupButton, { backgroundColor: colors.primary }]}
             onPress={handleRegister}
           >
             <Text style={styles.signupButtonText}>Sign Up</Text>
           </TouchableOpacity>
 
           <View style={styles.loginPrompt}>
-            <Text style={styles.loginText}>Already have an account? </Text>
+            <Text style={[styles.loginText, { color: colors.textSecondary }]}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>Log In</Text>
+              <Text style={[styles.loginLink, { color: colors.primary }]}>Log In</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -80,7 +97,17 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+  },
+  themeToggle: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 2,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backButton: {
     position: 'absolute',
@@ -90,7 +117,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F8F9FA',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -104,20 +130,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '400',
-    color: '#333333',
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
     fontWeight: '400',
-    color: '#666666',
   },
   form: {
     marginTop: spacing.md,
   },
   signupButton: {
-    backgroundColor: '#5B8DEE',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -138,11 +161,9 @@ const styles = StyleSheet.create({
   loginText: {
     fontSize: 15,
     fontWeight: '400',
-    color: '#666666',
   },
   loginLink: {
     fontSize: 15,
     fontWeight: '400',
-    color: '#5B8DEE',
   },
 });

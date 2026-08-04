@@ -14,7 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { theme } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeColors } from '../../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -58,6 +59,9 @@ const weeklyData = [
 ];
 
 export default function DashboardScreen() {
+  const { isDark } = useTheme();
+  const colors = getThemeColors(isDark);
+  
   const [nightMode, setNightMode] = useState(false);
   const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
   const safetyScore = 850;
@@ -79,14 +83,14 @@ export default function DashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <View>
-          <Text style={styles.headerTitle}>Dashboard</Text>
-          <Text style={styles.headerSubtitle}>Safety Overview</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Dashboard</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Safety Overview</Text>
         </View>
       </View>
 
@@ -96,32 +100,32 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Safety Score Card */}
-        <View style={styles.scoreCard}>
-          <Text style={styles.scoreLabel}>Safety Score</Text>
+        <View style={[styles.scoreCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.scoreLabel, { color: colors.textSecondary }]}>Safety Score</Text>
           <View style={styles.scoreRow}>
-            <Text style={styles.scoreValue}>{safetyScore}</Text>
-            <Text style={styles.scoreMax}>/ {maxScore}</Text>
+            <Text style={[styles.scoreValue, { color: colors.text }]}>{safetyScore}</Text>
+            <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/ {maxScore}</Text>
           </View>
-          <View style={styles.scoreBar}>
+          <View style={[styles.scoreBar, { backgroundColor: colors.border }]}>
             <View style={[styles.scoreBarFill, { width: `${percentage}%` }]} />
           </View>
-          <Text style={styles.scoreDescription}>
+          <Text style={[styles.scoreDescription, { color: colors.textSecondary }]}>
             You're in safe areas {percentage.toFixed(0)}% of the time
           </Text>
         </View>
 
         {/* Night Mode Toggle */}
-        <View style={styles.toggleCard}>
+        <View style={[styles.toggleCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.toggleLeft}>
-            <Text style={styles.toggleTitle}>Night Mode Alerts</Text>
-            <Text style={styles.toggleDescription}>
+            <Text style={[styles.toggleTitle, { color: colors.text }]}>Night Mode Alerts</Text>
+            <Text style={[styles.toggleDescription, { color: colors.textSecondary }]}>
               Extra safety alerts after dark
             </Text>
           </View>
           <Switch
             value={nightMode}
             onValueChange={setNightMode}
-            trackColor={{ false: '#E0E0E0', true: '#5B8DEE' }}
+            trackColor={{ false: colors.border, true: '#5B8DEE' }}
             thumbColor={nightMode ? '#5B8DEE' : '#FFFFFF'}
           />
         </View>
@@ -129,24 +133,24 @@ export default function DashboardScreen() {
         {/* Safety Trends */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Safety Trends</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Safety Trends</Text>
             <View style={styles.viewToggle}>
               <TouchableOpacity
-                style={[styles.toggleButton, viewMode === 'weekly' && styles.toggleButtonActive]}
+                style={[styles.toggleButton, viewMode === 'weekly' && [styles.toggleButtonActive, { backgroundColor: colors.text }]]}
                 onPress={() => setViewMode('weekly')}
               >
                 <Text
-                  style={[styles.toggleText, viewMode === 'weekly' && styles.toggleTextActive]}
+                  style={[styles.toggleText, { color: colors.textSecondary }, viewMode === 'weekly' && [styles.toggleTextActive, { color: colors.background }]]}
                 >
                   Weekly
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.toggleButton, viewMode === 'monthly' && styles.toggleButtonActive]}
+                style={[styles.toggleButton, viewMode === 'monthly' && [styles.toggleButtonActive, { backgroundColor: colors.text }]]}
                 onPress={() => setViewMode('monthly')}
               >
                 <Text
-                  style={[styles.toggleText, viewMode === 'monthly' && styles.toggleTextActive]}
+                  style={[styles.toggleText, { color: colors.textSecondary }, viewMode === 'monthly' && [styles.toggleTextActive, { color: colors.background }]]}
                 >
                   Monthly
                 </Text>
@@ -162,10 +166,10 @@ export default function DashboardScreen() {
                 <View key={index} style={styles.chartBar}>
                   <View style={styles.chartBarContainer}>
                     <View style={[styles.chartBarFill, { height }]}>
-                      <Text style={styles.chartBarValue}>{data.score}</Text>
+                      <Text style={[styles.chartBarValue, { color: '#FFFFFF' }]}>{data.score}</Text>
                     </View>
                   </View>
-                  <Text style={styles.chartBarLabel}>{data.day}</Text>
+                  <Text style={[styles.chartBarLabel, { color: colors.textSecondary }]}>{data.day}</Text>
                 </View>
               );
             })}
@@ -174,46 +178,46 @@ export default function DashboardScreen() {
 
         {/* Recent Alerts */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Alerts</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Alerts</Text>
           {recentAlerts.map((alert) => (
-            <TouchableOpacity key={alert.id} style={styles.alertRow}>
+            <TouchableOpacity key={alert.id} style={[styles.alertRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.alertLeft}>
-                <Text style={styles.alertType}>{alert.type}</Text>
-                <Text style={styles.alertLocation}>{alert.location}</Text>
+                <Text style={[styles.alertType, { color: colors.text }]}>{alert.type}</Text>
+                <Text style={[styles.alertLocation, { color: colors.textSecondary }]}>{alert.location}</Text>
               </View>
-              <Text style={styles.alertTime}>{alert.time}</Text>
+              <Text style={[styles.alertTime, { color: colors.textSecondary }]}>{alert.time}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Emergency Contacts */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Emergency Contacts</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Emergency Contacts</Text>
           {emergencyContacts.map((contact) => (
             <TouchableOpacity
               key={contact.id}
-              style={styles.contactRow}
+              style={[styles.contactRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
               onPress={() => handleCall(contact.number, contact.name)}
             >
-              <Text style={styles.contactName}>{contact.name}</Text>
-              <Text style={styles.contactNumber}>{contact.number}</Text>
+              <Text style={[styles.contactName, { color: colors.text }]}>{contact.name}</Text>
+              <Text style={[styles.contactNumber, { color: colors.textSecondary }]}>{contact.number}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Stats Summary */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>42</Text>
-            <Text style={styles.statLabel}>Safe Routes</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.statValue, { color: colors.text }]}>42</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Safe Routes</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>18</Text>
-            <Text style={styles.statLabel}>Reports Filed</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.statValue, { color: colors.text }]}>18</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Reports Filed</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>127</Text>
-            <Text style={styles.statLabel}>Safe Trips</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.statValue, { color: colors.text }]}>127</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Safe Trips</Text>
           </View>
         </View>
       </ScrollView>
@@ -224,27 +228,22 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
-    backgroundColor: '#FFFFFF',
     paddingTop: 16,
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '400',
-    color: '#000000',
     marginBottom: 2,
     letterSpacing: -0.3,
   },
   headerSubtitle: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#666666',
   },
   scrollView: {
     flex: 1,
@@ -254,15 +253,14 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   scoreCard: {
-    backgroundColor: '#F8F9FA',
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
+    borderWidth: 1,
   },
   scoreLabel: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#666666',
     marginBottom: 12,
   },
   scoreRow: {
@@ -273,18 +271,15 @@ const styles = StyleSheet.create({
   scoreValue: {
     fontSize: 48,
     fontWeight: '300',
-    color: '#333333',
     letterSpacing: -1,
   },
   scoreMax: {
     fontSize: 20,
     fontWeight: '300',
-    color: '#999999',
     marginLeft: 4,
   },
   scoreBar: {
     height: 4,
-    backgroundColor: '#E0E0E0',
     borderRadius: 2,
     overflow: 'hidden',
     marginBottom: 12,
@@ -297,17 +292,16 @@ const styles = StyleSheet.create({
   scoreDescription: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#666666',
     lineHeight: 18,
   },
   toggleCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F8F9FA',
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
+    borderWidth: 1,
   },
   toggleLeft: {
     flex: 1,
@@ -316,13 +310,11 @@ const styles = StyleSheet.create({
   toggleTitle: {
     fontSize: 15,
     fontWeight: '400',
-    color: '#000000',
     marginBottom: 4,
   },
   toggleDescription: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#666666',
     lineHeight: 18,
   },
   section: {
@@ -337,14 +329,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: '400',
-    color: '#000000',
     marginBottom: 12,
   },
   viewToggle: {
     flexDirection: 'row',
-    backgroundColor: '#F0F0F0',
     borderRadius: 8,
     padding: 2,
+    backgroundColor: '#00000008',
   },
   toggleButton: {
     paddingVertical: 6,
@@ -352,21 +343,17 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   toggleButtonActive: {
-    backgroundColor: '#FFFFFF',
   },
   toggleText: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#666666',
   },
   toggleTextActive: {
-    color: '#000000',
   },
   chart: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    backgroundColor: '#F8F9FA',
     borderRadius: 12,
     padding: 16,
     height: 180,
@@ -391,12 +378,10 @@ const styles = StyleSheet.create({
   chartBarValue: {
     fontSize: 10,
     fontWeight: '400',
-    color: '#FFFFFF',
   },
   chartBarLabel: {
     fontSize: 11,
     fontWeight: '400',
-    color: '#999999',
     marginTop: 8,
   },
   alertRow: {
@@ -405,9 +390,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#F8F9FA',
     borderRadius: 10,
     marginBottom: 8,
+    borderWidth: 1,
   },
   alertLeft: {
     flex: 1,
@@ -415,18 +400,15 @@ const styles = StyleSheet.create({
   alertType: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#000000',
     marginBottom: 4,
   },
   alertLocation: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#666666',
   },
   alertTime: {
     fontSize: 12,
     fontWeight: '400',
-    color: '#999999',
   },
   contactRow: {
     flexDirection: 'row',
@@ -434,19 +416,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#F8F9FA',
     borderRadius: 10,
     marginBottom: 8,
+    borderWidth: 1,
   },
   contactName: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#000000',
   },
   contactNumber: {
     fontSize: 15,
     fontWeight: '400',
-    color: '#666666',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -454,22 +434,20 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    borderWidth: 1,
   },
   statValue: {
     fontSize: 32,
     fontWeight: '300',
-    color: '#000000',
     marginBottom: 4,
     letterSpacing: -0.5,
   },
   statLabel: {
     fontSize: 12,
     fontWeight: '400',
-    color: '#666666',
     textAlign: 'center',
   },
 });

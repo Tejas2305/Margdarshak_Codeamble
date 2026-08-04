@@ -10,7 +10,8 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeColors } from '../../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -22,37 +23,39 @@ const mockIncidents = [
 ];
 
 export default function MapScreen({ navigation }: any) {
+  const { isDark } = useTheme();
+  const colors = getThemeColors(isDark);
   const [searchQuery, setSearchQuery] = useState('');
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
 
       {/* Map Area */}
       <View style={styles.mapContainer}>
-        <View style={styles.mapPlaceholder}>
-          <Text style={styles.mapText}>Map View</Text>
-          <Text style={styles.mapSubtext}>Interactive map area</Text>
+        <View style={[styles.mapPlaceholder, { backgroundColor: colors.surfaceVariant }]}>
+          <Text style={[styles.mapText, { color: colors.text }]}>Map View</Text>
+          <Text style={[styles.mapSubtext, { color: colors.textSecondary }]}>Interactive map area</Text>
         </View>
       </View>
 
       {/* Search Bar */}
       <View style={[styles.searchContainer, { top: insets.top + 12 }]}>
         <TouchableOpacity
-          style={styles.searchBar}
+          style={[styles.searchBar, { backgroundColor: colors.surface }]}
           onPress={() => navigation.navigate('Search')}
           activeOpacity={0.8}
         >
-          <Text style={styles.searchIcon}>🔍</Text>
-          <Text style={styles.searchPlaceholder}>Search destination</Text>
+          <Text style={[styles.searchIcon, { color: colors.textSecondary }]}>🔍</Text>
+          <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>Search destination</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.iconButton}
+          style={[styles.iconButton, { backgroundColor: colors.surface }]}
           onPress={() => navigation.navigate('Settings')}
         >
-          <Text style={styles.iconText}>⚙</Text>
+          <Text style={[styles.iconText, { color: colors.textSecondary }]}>⚙</Text>
         </TouchableOpacity>
       </View>
 
@@ -65,28 +68,28 @@ export default function MapScreen({ navigation }: any) {
       </TouchableOpacity>
 
       {/* Bottom Sheet - Safety Info + Nearby Activity */}
-      <View style={styles.bottomSheet}>
-        <View style={styles.handle} />
+      <View style={[styles.bottomSheet, { backgroundColor: colors.surface }]}>
+        <View style={[styles.handle, { backgroundColor: colors.border }]} />
         
         {/* Safety Score - Inside Bottom Sheet */}
-        <View style={styles.safetyCard}>
+        <View style={[styles.safetyCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <View style={styles.safetyRow}>
             <View style={styles.safetyLeft}>
-              <Text style={styles.safetyLabel}>Current Area</Text>
-              <Text style={styles.safetyStatus}>Very Safe</Text>
+              <Text style={[styles.safetyLabel, { color: colors.textSecondary }]}>Current Area</Text>
+              <Text style={[styles.safetyStatus, { color: colors.text }]}>Very Safe</Text>
             </View>
             <View style={styles.scoreContainer}>
               <Text style={styles.scoreValue}>8.9</Text>
-              <Text style={styles.scoreLabel}>/10</Text>
+              <Text style={[styles.scoreLabel, { color: colors.textSecondary }]}>/10</Text>
             </View>
           </View>
           <TouchableOpacity onPress={() => navigation.navigate('RouteComparison')}>
-            <Text style={styles.linkText}>Compare routes →</Text>
+            <Text style={[styles.linkText, { color: colors.primary }]}>Compare routes →</Text>
           </TouchableOpacity>
         </View>
 
         {/* Nearby Activity */}
-        <Text style={styles.sheetTitle}>Nearby Activity</Text>
+        <Text style={[styles.sheetTitle, { color: colors.text }]}>Nearby Activity</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -94,9 +97,9 @@ export default function MapScreen({ navigation }: any) {
           contentContainerStyle={styles.incidentsContent}
         >
           {mockIncidents.map((incident) => (
-            <View key={incident.id} style={styles.incidentCard}>
-              <Text style={styles.incidentType}>{incident.type}</Text>
-              <Text style={styles.incidentTime}>{incident.time}</Text>
+            <View key={incident.id} style={[styles.incidentCard, { backgroundColor: colors.surfaceVariant }]}>
+              <Text style={[styles.incidentType, { color: colors.text }]}>{incident.type}</Text>
+              <Text style={[styles.incidentTime, { color: colors.textSecondary }]}>{incident.time}</Text>
             </View>
           ))}
         </ScrollView>
@@ -108,77 +111,81 @@ export default function MapScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   mapContainer: {
     flex: 1,
   },
   mapPlaceholder: {
     flex: 1,
-    backgroundColor: theme.colors.mapBackground,
     alignItems: 'center',
     justifyContent: 'center',
   },
   mapText: {
-    fontSize: theme.typography.h3,
+    fontSize: 20,
     fontWeight: '400',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    marginBottom: 4,
   },
   mapSubtext: {
-    fontSize: theme.typography.bodySmall,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '400',
   },
   searchContainer: {
     position: 'absolute',
-    left: theme.spacing.lg,
-    right: theme.spacing.lg,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
-    gap: theme.spacing.sm,
+    gap: 8,
     zIndex: 10,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    ...theme.shadows.medium,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   searchIcon: {
     fontSize: 18,
-    color: theme.colors.textSecondary,
-    marginRight: theme.spacing.md,
+    marginRight: 12,
   },
   searchPlaceholder: {
-    fontSize: theme.typography.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
   },
   iconButton: {
     width: 48,
     height: 48,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    ...theme.shadows.medium,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   iconText: {
     fontSize: 18,
-    color: theme.colors.textSecondary,
   },
   emergencyButton: {
     position: 'absolute',
-    right: theme.spacing.lg,
+    right: 16,
     width: 56,
     height: 56,
-    backgroundColor: theme.colors.error,
+    backgroundColor: '#EA4335',
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    ...theme.shadows.large,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
     zIndex: 10,
   },
   emergencyIcon: {
@@ -191,29 +198,29 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: theme.colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 12,
     paddingHorizontal: 20,
     paddingBottom: 90,
-    ...theme.shadows.large,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: theme.colors.borderLight,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 16,
   },
   safetyCard: {
-    backgroundColor: theme.colors.background,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
   },
   safetyRow: {
     flexDirection: 'row',
@@ -227,13 +234,11 @@ const styles = StyleSheet.create({
   safetyLabel: {
     fontSize: 12,
     fontWeight: '400',
-    color: theme.colors.textSecondary,
     marginBottom: 4,
   },
   safetyStatus: {
     fontSize: 20,
     fontWeight: '400',
-    color: theme.colors.text,
   },
   scoreContainer: {
     flexDirection: 'row',
@@ -242,23 +247,20 @@ const styles = StyleSheet.create({
   scoreValue: {
     fontSize: 40,
     fontWeight: '300',
-    color: theme.colors.success,
+    color: '#34A853',
   },
   scoreLabel: {
     fontSize: 16,
     fontWeight: '400',
-    color: theme.colors.textSecondary,
     marginLeft: 4,
   },
   linkText: {
     fontSize: 14,
     fontWeight: '400',
-    color: theme.colors.primary,
   },
   sheetTitle: {
     fontSize: 18,
     fontWeight: '400',
-    color: theme.colors.text,
     marginBottom: 12,
   },
   incidentsList: {
@@ -269,7 +271,6 @@ const styles = StyleSheet.create({
   },
   incidentCard: {
     width: 120,
-    backgroundColor: theme.colors.surfaceVariant,
     borderRadius: 12,
     padding: 12,
     marginRight: 12,
@@ -277,12 +278,10 @@ const styles = StyleSheet.create({
   incidentType: {
     fontSize: 14,
     fontWeight: '400',
-    color: theme.colors.text,
     marginBottom: 4,
   },
   incidentTime: {
     fontSize: 12,
     fontWeight: '400',
-    color: theme.colors.textSecondary,
   },
 });

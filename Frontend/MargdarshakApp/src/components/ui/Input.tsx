@@ -54,30 +54,20 @@ const styles = StyleSheet.create({
   label: {
     fontSize: typography.bodySmall,
     fontWeight: '500',
-    color: colors.text,
     marginBottom: spacing.xs,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.md,
     height: 52,
   },
   input: {
     flex: 1,
     fontSize: typography.body,
-    color: colors.text,
     paddingVertical: spacing.sm,
-  },
-  inputWithLeftIcon: {
-    paddingLeft: spacing.xs,
-  },
-  inputError: {
-    borderColor: colors.error,
   },
   leftIcon: {
     marginRight: spacing.sm,
@@ -87,7 +77,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: typography.caption,
-    color: colors.error,
     marginTop: spacing.xs,
   },
 });
