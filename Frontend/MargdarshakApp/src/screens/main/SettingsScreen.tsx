@@ -8,15 +8,120 @@ import {
   Switch,
   Alert,
   StatusBar,
+  TextInput,
+  Modal,
 } from 'react-native';
-import { theme } from '../../theme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeColors } from '../../theme';
 
 export default function SettingsScreen({ navigation }: any) {
+  const { isDark, toggleTheme } = useTheme();
+  const colors = getThemeColors(isDark);
+  
   const [notifications, setNotifications] = useState(true);
   const [locationTracking, setLocationTracking] = useState(true);
   const [nightMode, setNightMode] = useState(false);
   const [autoAlert, setAutoAlert] = useState(false);
   const [shareData, setShareData] = useState(true);
+  
+  // Phone verification states
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otp, setOtp] = useState('');
+
+  const handleSendOtp = () => {
+    if (phoneNumber.length !== 10) {
+      Alert.alert('Invalid Phone', 'Please enter a valid 10-digit phone number');
+      return;
+    }
+    // Simulate sending OTP
+    Alert.alert('OTP Sent', `Verification code sent to +91 ${phoneNumber}`);
+    setShowOtpInput(true);
+  };
+
+  const handleVerifyOtp = () => {
+    if (otp.length !== 6) {
+      Alert.alert('Invalid OTP', 'Please enter the 6-digit OTP');
+      return;
+    }
+    // Simulate OTP verification (in real app, verify with backend)
+    Alert.alert('Success', 'Phone number verified successfully!');
+    setPhoneVerified(true);
+    setShowPhoneModal(false);
+    setShowOtpInput(false);
+    setPhoneNumber('');
+    setOtp('');
+  };
+
+  const handlePhoneVerification = () => {
+    if (phoneVerified) {
+      Alert.alert(
+        'Phone Verified',
+        'Your phone number is already verified. Do you want to change it?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Change',
+            onPress: () => {
+              setPhoneVerified(false);
+              setShowPhoneModal(true);
+            },
+          },
+        ]
+      );
+    } else {
+      setShowPhoneModal(true);
+    }
+  };
+
+  // Dynamic styles based on theme
+  const dynamicStyles = {
+    header: {
+      ...styles.header,
+      backgroundColor: colors.surface,
+      borderBottomColor: colors.border,
+    },
+    backButton: {
+      ...styles.backButton,
+      backgroundColor: colors.background,
+    },
+    backIcon: {
+      ...styles.backIcon,
+      color: colors.text,
+    },
+    headerTitle: {
+      ...styles.headerTitle,
+      color: colors.text,
+    },
+    profileCard: {
+      ...styles.profileCard,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    avatar: {
+      ...styles.avatar,
+      backgroundColor: colors.primary,
+    },
+    profileName: {
+      ...styles.profileName,
+      color: colors.text,
+    },
+    profileEmail: {
+      ...styles.profileEmail,
+      color: colors.textSecondary,
+    },
+    editButton: {
+      ...styles.editButton,
+      backgroundColor: colors.background,
+    },
+    editIcon: {
+      ...styles.editIcon,
+      color: colors.text,
+    },
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -57,15 +162,15 @@ export default function SettingsScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backIcon}>←</Text>
+      <View style={dynamicStyles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={dynamicStyles.backButton}>
+          <Text style={dynamicStyles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={dynamicStyles.headerTitle}>Settings</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -75,31 +180,64 @@ export default function SettingsScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Section */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatar}>
+        <View style={dynamicStyles.profileCard}>
+          <View style={dynamicStyles.avatar}>
             <Text style={styles.avatarText}>JD</Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>John Doe</Text>
-            <Text style={styles.profileEmail}>john.doe@example.com</Text>
+            <Text style={dynamicStyles.profileName}>John Doe</Text>
+            <Text style={dynamicStyles.profileEmail}>john.doe@example.com</Text>
           </View>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editIcon}>✏</Text>
+          <TouchableOpacity style={dynamicStyles.editButton}>
+            <Text style={dynamicStyles.editIcon}>✏</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Account Security */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Account Security</Text>
+
+          <TouchableOpacity 
+            style={[styles.verificationCard, { backgroundColor: colors.surface, borderColor: colors.border }]} 
+            onPress={handlePhoneVerification}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconCircle, { backgroundColor: phoneVerified ? '#4CAF5015' : '#5B8DEE15' }]}>
+                <MaterialCommunityIcons 
+                  name="phone-check" 
+                  size={20} 
+                  color={phoneVerified ? '#4CAF50' : '#5B8DEE'} 
+                />
+              </View>
+              <View style={styles.settingTextContainer}>
+                <Text style={[styles.settingTitle, { color: colors.text }]}>Phone Verification</Text>
+                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
+                  {phoneVerified ? 'Phone number verified' : 'Verify your phone number (Optional)'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.verificationStatus}>
+              {phoneVerified ? (
+                <MaterialCommunityIcons name="check-circle" size={24} color="#4CAF50" />
+              ) : (
+                <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
+              )}
+            </View>
           </TouchableOpacity>
         </View>
 
         {/* Privacy & Safety */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Privacy & Safety</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Privacy & Safety</Text>
 
-          <View style={styles.settingCard}>
+          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.settingLeft}>
-              <View style={styles.iconCircle}>
-                <Text style={styles.iconText}>N</Text>
+              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
+                <MaterialCommunityIcons name="bell-outline" size={20} color={colors.primary} />
               </View>
               <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Notifications</Text>
-                <Text style={styles.settingDescription}>
+                <Text style={[styles.settingTitle, { color: colors.text }]}>Notifications</Text>
+                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
                   Receive safety alerts and updates
                 </Text>
               </View>
@@ -107,8 +245,8 @@ export default function SettingsScreen({ navigation }: any) {
             <Switch
               value={notifications}
               onValueChange={setNotifications}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary + '60' }}
-              thumbColor={notifications ? theme.colors.primary : '#f4f3f4'}
+              trackColor={{ false: colors.border, true: colors.primary + '60' }}
+              thumbColor={notifications ? colors.primary : '#f4f3f4'}
             />
           </View>
 
@@ -228,15 +366,39 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* App Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Settings</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>App Settings</Text>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.iconCircle}>
-              <Text style={styles.iconText}>L</Text>
+          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
+                <MaterialCommunityIcons 
+                  name={isDark ? "weather-night" : "weather-sunny"} 
+                  size={20} 
+                  color={colors.primary} 
+                />
+              </View>
+              <View style={styles.settingTextContainer}>
+                <Text style={[styles.settingTitle, { color: colors.text }]}>Dark Mode</Text>
+                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
+                  {isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+                </Text>
+              </View>
             </View>
-            <Text style={styles.menuText}>Language</Text>
-            <Text style={styles.menuValue}>English</Text>
-            <Text style={styles.menuArrow}>→</Text>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: colors.border, true: colors.primary + '60' }}
+              thumbColor={isDark ? colors.primary : '#f4f3f4'}
+            />
+          </View>
+
+          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
+              <MaterialCommunityIcons name="translate" size={20} color={colors.primary} />
+            </View>
+            <Text style={[styles.menuText, { color: colors.text }]}>Language</Text>
+            <Text style={[styles.menuValue, { color: colors.textSecondary }]}>English</Text>
+            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
@@ -297,25 +459,122 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Danger Zone */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Danger Zone</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Danger Zone</Text>
 
-          <TouchableOpacity style={styles.dangerButton} onPress={handleLogout}>
-            <Text style={styles.dangerText}>Logout</Text>
+          <TouchableOpacity style={[styles.dangerButton, { backgroundColor: colors.surface }]} onPress={handleLogout}>
+            <Text style={[styles.dangerText, { color: colors.text }]}>Logout</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.dangerButton, styles.deleteButton]}
+            style={[styles.dangerButton, styles.deleteButton, { backgroundColor: colors.surface }]}
             onPress={handleDeleteAccount}
           >
-            <Text style={styles.dangerText}>Delete Account</Text>
+            <Text style={[styles.dangerText, { color: colors.text }]}>Delete Account</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.footer}>
+        <Text style={[styles.footer, { color: colors.textSecondary }]}>
           Margdarshak v1.0.0{'\n'}
           Made for safer communities
         </Text>
       </ScrollView>
+
+      {/* Phone Verification Modal */}
+      <Modal
+        visible={showPhoneModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => {
+          setShowPhoneModal(false);
+          setShowOtpInput(false);
+          setPhoneNumber('');
+          setOtp('');
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Verify Phone Number</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowPhoneModal(false);
+                  setShowOtpInput(false);
+                  setPhoneNumber('');
+                  setOtp('');
+                }}
+              >
+                <MaterialCommunityIcons name="close" size={24} color="#333333" />
+              </TouchableOpacity>
+            </View>
+
+            {!showOtpInput ? (
+              <>
+                <Text style={styles.modalDescription}>
+                  Enter your phone number to receive a verification code
+                </Text>
+
+                <View style={styles.phoneInputContainer}>
+                  <View style={styles.countryCode}>
+                    <Text style={styles.countryCodeText}>+91</Text>
+                  </View>
+                  <TextInput
+                    style={styles.phoneInput}
+                    placeholder="Enter 10-digit phone number"
+                    placeholderTextColor="#999999"
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, phoneNumber.length !== 10 && styles.modalButtonDisabled]}
+                  onPress={handleSendOtp}
+                  disabled={phoneNumber.length !== 10}
+                >
+                  <Text style={styles.modalButtonText}>Send OTP</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalDescription}>
+                  Enter the 6-digit code sent to +91 {phoneNumber}
+                </Text>
+
+                <TextInput
+                  style={styles.otpInput}
+                  placeholder="Enter 6-digit OTP"
+                  placeholderTextColor="#999999"
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  value={otp}
+                  onChangeText={setOtp}
+                />
+
+                <TouchableOpacity
+                  style={[styles.modalButton, otp.length !== 6 && styles.modalButtonDisabled]}
+                  onPress={handleVerifyOtp}
+                  disabled={otp.length !== 6}
+                >
+                  <Text style={styles.modalButtonText}>Verify OTP</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.resendButton}
+                  onPress={handleSendOtp}
+                >
+                  <Text style={styles.resendText}>Resend OTP</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            <Text style={styles.modalFooter}>
+              This is optional and helps secure your account
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -323,10 +582,8 @@ export default function SettingsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   header: {
-    backgroundColor: theme.colors.surface,
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
@@ -334,24 +591,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backIcon: {
     fontSize: 24,
-    color: theme.colors.text,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: theme.colors.text,
   },
   placeholder: {
     width: 40,
@@ -366,18 +619,15 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     padding: 20,
     marginBottom: 28,
     borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   avatar: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -393,30 +643,25 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 18,
     fontWeight: '700',
-    color: theme.colors.text,
     marginBottom: 4,
   },
   profileEmail: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
   },
   editButton: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   editIcon: {
     fontSize: 16,
-    color: theme.colors.text,
   },
   iconCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.primary + '15',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -424,7 +669,6 @@ const styles = StyleSheet.create({
   iconText: {
     fontSize: 16,
     fontWeight: '700',
-    color: theme.colors.primary,
   },
   section: {
     marginBottom: 28,
@@ -432,19 +676,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: theme.colors.text,
     marginBottom: 12,
   },
   settingCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   settingLeft: {
     flexDirection: 'row',
@@ -457,43 +698,35 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: theme.colors.text,
     marginBottom: 4,
   },
   settingDescription: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   menuText: {
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: theme.colors.text,
   },
   menuValue: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
     marginRight: 8,
   },
   menuArrow: {
     fontSize: 20,
-    color: theme.colors.textSecondary,
   },
   dangerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -501,18 +734,135 @@ const styles = StyleSheet.create({
     borderColor: '#FF9800',
   },
   deleteButton: {
-    borderColor: theme.colors.error,
+    borderColor: '#EA4335',
   },
   dangerText: {
     fontSize: 16,
     fontWeight: '700',
-    color: theme.colors.text,
   },
   footer: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
     textAlign: 'center',
     marginTop: 20,
     lineHeight: 20,
+  },
+  verificationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  verificationStatus: {
+    marginLeft: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '400',
+    color: '#333333',
+  },
+  modalDescription: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#666666',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  phoneInputContainer: {
+    flexDirection: 'row',
+    marginBottom: 24,
+  },
+  countryCode: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  countryCodeText: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#333333',
+  },
+  phoneInput: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#333333',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    height: 50,
+  },
+  otpInput: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 24,
+    fontWeight: '400',
+    color: '#333333',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    height: 60,
+    textAlign: 'center',
+    letterSpacing: 8,
+    marginBottom: 24,
+  },
+  modalButton: {
+    backgroundColor: '#5B8DEE',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalButtonDisabled: {
+    backgroundColor: '#E0E0E0',
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#FFFFFF',
+  },
+  resendButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  resendText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#5B8DEE',
+  },
+  modalFooter: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#999999',
+    textAlign: 'center',
+    marginTop: 16,
   },
 });

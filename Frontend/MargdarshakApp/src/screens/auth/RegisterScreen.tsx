@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/types';
 import { Button, Input, PasswordInput } from '../../components/ui';
 import { colors, typography, spacing } from '../../theme';
@@ -20,9 +21,21 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Back Button */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <MaterialCommunityIcons name="arrow-left" size={24} color="#333333" />
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Sign up to get started</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Sign up to get started</Text>
+        </View>
 
         <View style={styles.form}>
           <Input
@@ -45,12 +58,12 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
             onChangeText={setPassword}
           />
 
-          <Button
-            title="Sign Up"
+          <TouchableOpacity
+            style={styles.signupButton}
             onPress={handleRegister}
-            fullWidth
-            style={{ marginTop: spacing.lg }}
-          />
+          >
+            <Text style={styles.signupButtonText}>Sign Up</Text>
+          </TouchableOpacity>
 
           <View style={styles.loginPrompt}>
             <Text style={styles.loginText}>Already have an account? </Text>
@@ -67,25 +80,54 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 1,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8F9FA',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: 60,
+    paddingTop: 120,
+  },
+  header: {
+    marginBottom: 40,
   },
   title: {
-    fontSize: typography.h2,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: spacing.xs,
+    fontSize: 32,
+    fontWeight: '400',
+    color: '#333333',
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#666666',
   },
   form: {
     marginTop: spacing.md,
+  },
+  signupButton: {
+    backgroundColor: '#5B8DEE',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  signupButtonText: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#FFFFFF',
   },
   loginPrompt: {
     flexDirection: 'row',
@@ -94,12 +136,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   loginText: {
-    fontSize: typography.body,
-    color: colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#666666',
   },
   loginLink: {
-    fontSize: typography.body,
-    color: colors.primary,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#5B8DEE',
   },
 });

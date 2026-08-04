@@ -1,5 +1,6 @@
-// Professional minimal theme - Black, White, Gray only
-export const colors = {
+// Professional minimal theme - Black, White, Gray with Dark mode support
+
+export const lightColors = {
   // Primary - Minimal blue usage
   primary: '#1A73E8',
   primaryDark: '#1557B0',
@@ -44,6 +45,54 @@ export const colors = {
   // Transparent
   transparent: 'transparent',
 };
+
+export const darkColors = {
+  // Primary - Minimal blue usage
+  primary: '#5B8DEE',
+  primaryDark: '#4A7BCE',
+  primaryLight: '#7CA3F2',
+  
+  // Safety Colors - Only for critical use
+  success: '#4CAF50',
+  warning: '#FFC107',
+  error: '#F44336',
+  info: '#5B8DEE',
+  
+  // Background - Dark theme
+  background: '#121212',
+  surface: '#1E1E1E',
+  surfaceVariant: '#2A2A2A',
+  
+  // Text - Light colors for dark theme
+  text: '#FFFFFF',
+  textSecondary: '#B3B3B3',
+  textTertiary: '#808080',
+  textDisabled: '#666666',
+  textLight: '#B3B3B3',
+  
+  // UI Elements - Dark tones
+  border: '#333333',
+  borderLight: '#2A2A2A',
+  divider: '#333333',
+  
+  // Map specific
+  mapBackground: '#1A1A1A',
+  safeGreen: '#4CAF50',
+  dangerRed: '#F44336',
+  
+  // Overlay
+  overlay: 'rgba(0, 0, 0, 0.7)',
+  overlayLight: 'rgba(0, 0, 0, 0.5)',
+  
+  // Social
+  google: '#EA4335',
+  apple: '#FFFFFF',
+  
+  // Transparent
+  transparent: 'transparent',
+};
+
+export const colors = lightColors; // Default export for backward compatibility
 
 export const typography = {
   // Font Sizes - Clean hierarchy
@@ -121,6 +170,11 @@ export const theme = {
   spacing,
   borderRadius,
   shadows,
+};
+
+// Function to get theme colors based on mode
+export const getThemeColors = (isDark: boolean) => {
+  return isDark ? darkColors : lightColors;
 };
 
 export type Theme = typeof theme;

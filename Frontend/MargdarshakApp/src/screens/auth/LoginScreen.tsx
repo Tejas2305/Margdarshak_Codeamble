@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/types';
 import { Button, Input, PasswordInput } from '../../components/ui';
 import { colors, typography, spacing } from '../../theme';
@@ -24,9 +25,21 @@ export const LoginScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Back Button */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <MaterialCommunityIcons name="arrow-left" size={24} color="#333333" />
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Log in to continue</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Log in to continue</Text>
+        </View>
 
         <View style={styles.form}>
           <Input
@@ -49,12 +62,12 @@ export const LoginScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <Button
-            title="Log In"
+          <TouchableOpacity
+            style={styles.loginButton}
             onPress={handleLogin}
-            fullWidth
-            style={{ marginTop: spacing.lg }}
-          />
+          >
+            <Text style={styles.loginButtonText}>Log In</Text>
+          </TouchableOpacity>
 
           <View style={styles.signupPrompt}>
             <Text style={styles.signupText}>Don't have an account? </Text>
@@ -71,34 +84,63 @@ export const LoginScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 1,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F8F9FA',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: 60,
+    paddingTop: 120,
+  },
+  header: {
+    marginBottom: 40,
   },
   title: {
-    fontSize: typography.h2,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: spacing.xs,
+    fontSize: 32,
+    fontWeight: '400',
+    color: '#333333',
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#666666',
   },
   form: {
     marginTop: spacing.md,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginTop: spacing.sm,
+    marginTop: 12,
+    marginBottom: 24,
   },
   forgotPasswordText: {
-    fontSize: typography.bodySmall,
-    color: colors.primary,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#5B8DEE',
+  },
+  loginButton: {
+    backgroundColor: '#5B8DEE',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  loginButtonText: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#FFFFFF',
   },
   signupPrompt: {
     flexDirection: 'row',
@@ -107,12 +149,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   signupText: {
-    fontSize: typography.body,
-    color: colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#666666',
   },
   signupLink: {
-    fontSize: typography.body,
-    color: colors.primary,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#5B8DEE',
   },
 });
