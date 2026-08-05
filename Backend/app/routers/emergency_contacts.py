@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
 from app.models.emergency_contact import EmergencyContact
@@ -44,15 +45,29 @@ async def create_contact(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    existing = await db.scalar(
+        select(EmergencyContact).where(
+            EmergencyContact.user_id == current_user.user_id,
+            EmergencyContact.phone_number == request.phone_number,
+        )
+    )
+
+    if existing is not None:
+        raise HTTPException(status_code=400, detail="Contact with this phone number already exists")
+
     new = EmergencyContact(
         user_id=current_user.user_id,
         name=request.name,
         phone_number=request.phone_number,
-
     )
 
     db.add(new)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail="Contact with this phone number already exists")
+
     await db.refresh(new)
 
     return {"message": "Contact added", "contact_id": new.contact_id}

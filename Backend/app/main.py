@@ -1,4 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.database import Base, engine
 from app.routers.auth import router as auth_router
@@ -24,3 +27,15 @@ app.include_router(emergency_contacts_router)
 @app.get("/")
 async def root():
     return {"message": "backend is running"}
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(status_code=422, content={"detail": "Invalid content"})
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        return JSONResponse(status_code=404, content={"detail": "Not Found"})
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
