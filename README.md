@@ -23,26 +23,30 @@
 
 | API | Status | Taken By |
 |---|---|---|
-| GET /reports/categories | Pending | Tejas |
+| GET /reports/categories | Done | Tejas |
 | POST /reports/create | Pending | Tejas |
 | POST /reports/upload-photo | Pending | |
 | GET /reports/my-reports *(includes status inline, no separate /status endpoint)* | Pending | |
 | POST /map/route-safety | Pending | |
 
+**1 / 5 done**
+
 ### Medium
 
 | API | Status | Taken By |
 |---|---|---|
-| GET /user/emergency-contacts | Pending | |
-| POST /user/emergency-contacts | Pending | |
-| PUT /user/emergency-contacts/{id} | Pending | |
-| DELETE /user/emergency-contacts/{id} | Pending | |
+| GET /user/emergency-contacts | Done | Tejas |
+| POST /user/emergency-contacts | Done | Tejas |
+| PUT /user/emergency-contacts/ | Done | Tejas |
+| DELETE /user/emergency-contacts/ | Done | Tejas |
 | POST /map/safety-check | Pending | |
 | POST /map/compare-routes | Pending | |
 | GET /map/incidents/nearby *(radius in meters param)* | Pending | |
 | GET /search/places *(OSRM-enabled)* | Pending | |
 | GET /places/safety-score | Pending | |
 | POST /sos/trigger | Pending | |
+
+**4 / 10 done**
 
 ### Least
 
@@ -54,7 +58,7 @@
 | GET /sos/history | Pending | |
 | GET /community/reports | Pending | |
 
-**25 pending** across high/medium/least/optional.
+**0 / 5 done**
 
 ### Optional (mock or skip for the 3-day hackathon demo, revisit after)
 
@@ -65,6 +69,8 @@
 | POST /auth/forgot-password | Pending | |
 | POST /auth/reset-password | Pending | |
 | Google OAuth Login | Pending | |
+
+**0 / 5 done**
 
 ## Explicitly skipped (confirmed, not building)
 
@@ -80,11 +86,11 @@
 
 ---
 
-**Totals:** 8 done, 25 pending (5 high, 10 medium, 5 least, 5 optional), 13 skipped.
+**Totals:** 13 done (8 auth/profile + 1 high + 4 medium), 20 pending (4 high, 6 medium, 5 least, 5 optional), 13 skipped.
 
 ## Progress
 
-- **Done:** 8 / 33 tracked APIs (~24%)
+- **Done:** 13 / 33 tracked APIs (~39%)
 - **Days remaining:** 3
-- **Demo-critical path (high + medium, 15 APIs):** 0 / 15 done — this is what to clear first
+- **Demo-critical path (high + medium, 15 APIs):** 5 / 15 done — this is what to clear first
 - Optional category (5 APIs) can be mocked/hardcoded for the demo without spending build time on real integration
