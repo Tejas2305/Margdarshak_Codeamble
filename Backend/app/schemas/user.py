@@ -12,3 +12,28 @@ class UpdateProfileRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
+
+
+class EmergencyContactBase(BaseModel):
+    name: str
+    phone_number: str
+
+
+class EmergencyContactCreate(EmergencyContactBase):
+    pass
+
+
+class EmergencyContactUpdate(BaseModel):
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+
+
+
+class EmergencyContactResponse(BaseModel):
+    contact_id: int
+    name: str
+    phone_number: str
+
+
+    class Config:
+        orm_mode = True

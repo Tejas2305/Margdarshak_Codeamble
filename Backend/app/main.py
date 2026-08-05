@@ -4,6 +4,7 @@ from app.database import Base, engine
 from app.routers.auth import router as auth_router
 from app.routers.user import router as user_router
 from app.routers.reports import router as reports_router
+from app.routers.emergency_contacts import router as emergency_contacts_router
 import app.models  # noqa: F401
 
 app = FastAPI(title="Margadarshak")
@@ -18,6 +19,7 @@ async def on_startup():
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(reports_router)
+app.include_router(emergency_contacts_router)
 
 @app.get("/")
 async def root():
