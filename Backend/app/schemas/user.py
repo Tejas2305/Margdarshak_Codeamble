@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 
@@ -9,6 +9,7 @@ class UpdateProfileRequest(BaseModel):
     date_of_birth: Optional[str] = None
     profile_picture: Optional[str] = None
 
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
@@ -16,7 +17,7 @@ class ChangePasswordRequest(BaseModel):
 
 class EmergencyContactBase(BaseModel):
     name: str
-    phone_number: str
+    phone_number: str = Field(pattern=r"^\+?[1-9]\d{1,14}$")
 
 
 class EmergencyContactCreate(EmergencyContactBase):
@@ -24,9 +25,9 @@ class EmergencyContactCreate(EmergencyContactBase):
 
 
 class EmergencyContactUpdate(BaseModel):
+    contact_id: int
     name: Optional[str] = None
-    phone_number: Optional[str] = None
-
+    phone_number: Optional[str] = Field(default=None, pattern=r"^\+?[1-9]\d{1,14}$")
 
 
 class EmergencyContactResponse(BaseModel):
@@ -34,6 +35,5 @@ class EmergencyContactResponse(BaseModel):
     name: str
     phone_number: str
 
-
     class Config:
-        orm_mode = True
+        from_attributes = True

@@ -73,16 +73,21 @@ async def create_contact(
     return {"message": "Contact added", "contact_id": new.contact_id}
 
 
-@router.put("/{contact_id}")
+@router.put("")
 async def update_contact(
     request: EmergencyContactUpdate,
-    contact_id: int = Path(..., ge=1),
     # request: EmergencyContactUpdate = Depends(),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # contact_id must be provided in the request body now
+    if getattr(request, "contact_id", None) is None:
+        raise HTTPException(status_code=400, detail="contact_id is required in request body")
+
+    target_id = request.contact_id
+
     result = await db.execute(
-        select(EmergencyContact).where(EmergencyContact.contact_id == contact_id)
+        select(EmergencyContact).where(EmergencyContact.contact_id == target_id)
     )
     contact = result.scalar_one_or_none()
 
