@@ -4,14 +4,14 @@
 
 | API | Status | Taken By |
 |---|---|---|
-| POST /auth/register | Done | |
-| POST /auth/login | Done | |
-| POST /auth/refresh | Done | |
-| POST /auth/logout | Done | |
-| GET /users/me | Done | |
-| PUT /users/me | Done | |
-| DELETE /users/me | Done | |
-| PUT /users/change-password | Done | |
+| POST /auth/register | Done | Tanishka |
+| POST /auth/login | Done | Tanishka |
+| POST /auth/refresh | Done | Tanishka |
+| POST /auth/logout | Done | Tanishka |
+| GET /users/me | Done | Tanishka |
+| PUT /users/me | Done | Tanishka |
+| DELETE /users/me | Done | Tanishka |
+| PUT /users/change-password | Done | Tanishka |
 
 **8 / 8 done** — Auth + core user profile module.
 
@@ -23,8 +23,8 @@
 
 | API | Status | Taken By |
 |---|---|---|
-| GET /reports/categories | Pending | |
-| POST /reports/create | Pending | |
+| GET /reports/categories | Pending | Tejas |
+| POST /reports/create | Pending | Tejas |
 | POST /reports/upload-photo | Pending | |
 | GET /reports/my-reports *(includes status inline, no separate /status endpoint)* | Pending | |
 | POST /map/route-safety | Pending | |
