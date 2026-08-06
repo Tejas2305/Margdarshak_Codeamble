@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 
 
@@ -9,12 +9,11 @@ class ReportCreate(BaseModel):
     description: Optional[str] = None
     latitude: float
     longitude: float
-    photos: Optional[List[str]] = None
-    is_anonymous: bool = False
 
 
 class ReportResponse(BaseModel):
     report_id: int
+    user_id: int
     category_id: int
     category_name: Optional[str] = None
     user_rating: int
@@ -22,8 +21,6 @@ class ReportResponse(BaseModel):
     description: Optional[str] = None
     latitude: float
     longitude: float
-    photos: Optional[List[str]] = None
-    is_anonymous: bool = False
     status: str
     upvotes: int
     downvotes: int

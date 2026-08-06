@@ -40,11 +40,20 @@ async def get_categories(
 
     if not categories:
         default_cats = [
-            ("Theft", "Mobile, vehicle, or item theft", 50.0, 70.0),
-            ("Harassment", "Physical or verbal harassment", 60.0, 80.0),
-            ("Assault", "Physical violence or assault", 80.0, 95.0),
-            ("Poor Lighting", "Dark or poorly lit streets", 30.0, 50.0),
-            ("Suspicious Activity", "Suspicious gathering or behavior", 40.0, 60.0),
+            ("Got Robbed", "Phone, wallet, bag, chain, or other belongings were stolen.", 60.0, 80.0),
+            ("Harassed", "Catcalling, unwanted comments, staring, or someone making you uncomfortable.", 60.0, 80.0),
+            ("Being Followed", "Someone kept following or repeatedly approaching you.", 70.0, 85.0),
+            ("Physical Attack", "Someone was physically attacked or assaulted.", 80.0, 95.0),
+            ("Accident", "Road accident, vehicle crash, or traffic-related incident.", 50.0, 75.0),
+            ("Too Dark", "Poor street lighting or very dark area.", 30.0, 50.0),
+            ("Dog Alert", "Aggressive stray dogs or other animals nearby.", 30.0, 55.0),
+            ("Not The Vibes", "The place felt unsafe or suspicious, but nothing specific happened.", 20.0, 45.0),
+            ("Rough Roads", "Potholes, broken roads, damaged footpaths, or unsafe road conditions.", 25.0, 45.0),
+            ("Public Nuisance", "Drunk people, loud groups, fights, or public nuisance.", 35.0, 60.0),
+            ("Empty Area", "Empty or deserted area with very few people around.", 35.0, 55.0),
+            ("Natural Hazard", "Flooding, landslides, storm damage, fallen trees, or other natural hazards.", 40.0, 65.0),
+            ("Suspicious Activity", "Someone or something looked suspicious and could pose a safety risk.", 40.0, 60.0),
+            ("Other", "Any safety concern that does not fit the above categories.", 30.0, 50.0),
         ]
         for name, desc, s_min, s_max in default_cats:
             cat = Category(name=name, description=desc, severity_min=s_min, severity_max=s_max)
@@ -90,7 +99,7 @@ async def create_report(
         nearest_seg.is_dirty = True
 
     new_report = Report(
-        user_id=None if request.is_anonymous else current_user.user_id,
+        user_id=current_user.user_id,
         category_id=request.category_id,
         road_segment_id=seg_id,
         user_rating=request.user_rating,
@@ -98,8 +107,6 @@ async def create_report(
         description=request.description,
         latitude=request.latitude,
         longitude=request.longitude,
-        photos=request.photos,
-        is_anonymous=request.is_anonymous,
         status="PENDING",
         upvotes=0,
         downvotes=0,
@@ -115,6 +122,7 @@ async def create_report(
 
     return ReportResponse(
         report_id=new_report.report_id,
+        user_id=new_report.user_id,
         category_id=new_report.category_id,
         category_name=category.name,
         user_rating=new_report.user_rating,
@@ -122,8 +130,6 @@ async def create_report(
         description=new_report.description,
         latitude=new_report.latitude,
         longitude=new_report.longitude,
-        photos=new_report.photos,
-        is_anonymous=new_report.is_anonymous,
         status=new_report.status,
         upvotes=new_report.upvotes,
         downvotes=new_report.downvotes,

@@ -5,11 +5,9 @@ from sqlalchemy import (
     String,
     Float,
     Text,
-    Boolean,
     ForeignKey,
     TIMESTAMP,
-    UniqueConstraint,
-    JSON
+    UniqueConstraint
 )
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -20,7 +18,7 @@ class Report(Base):
     __tablename__ = "reports"
 
     report_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
     category_id = Column(Integer, ForeignKey("categories.category_id"), nullable=False)
     road_segment_id = Column(Integer, ForeignKey("road_segments.segment_id", ondelete="SET NULL"), nullable=True)
     user_rating = Column(SmallInteger, nullable=False, default=3)
@@ -28,8 +26,6 @@ class Report(Base):
     description = Column(Text, nullable=True)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    photos = Column(JSON, nullable=True)
-    is_anonymous = Column(Boolean, default=False, nullable=False)
     status = Column(String(20), default="PENDING", nullable=False)
     upvotes = Column(Integer, default=0, nullable=False)
     downvotes = Column(Integer, default=0, nullable=False)
@@ -53,7 +49,7 @@ class ReportVote(Base):
     vote_id = Column(Integer, primary_key=True, index=True)
     report_id = Column(Integer, ForeignKey("reports.report_id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
-    vote_type = Column(SmallInteger, nullable=False)  # 1 for upvote, -1 for downvote
+    vote_type = Column(SmallInteger, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     __table_args__ = (
