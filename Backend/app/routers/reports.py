@@ -21,8 +21,10 @@ from app.services.scoring_service import (
 )
 from app.services.spatial_service import find_nearest_road_segment
 from app.services.dirty_segment_service import recalculate_dirty_segments
+from app.services.osrm_updater_service import trigger_debounced_osrm_update
 
 router = APIRouter(
+
     prefix="/reports",
     tags=["Reports"]
 )
@@ -113,8 +115,9 @@ async def create_report(
     await db.commit()
     await db.refresh(new_report)
 
-    # Trigger dirty segment recalculation
+    # Trigger dirty segment recalculation and debounced OSRM customize pipeline
     await recalculate_dirty_segments(db)
+    await trigger_debounced_osrm_update()
 
     return ReportResponse(
         report_id=new_report.report_id,
@@ -194,8 +197,9 @@ async def vote_report(
     await db.commit()
     await db.refresh(report)
 
-    # Recalculate dirty segments
+    # Recalculate dirty segments and trigger debounced OSRM customize pipeline
     await recalculate_dirty_segments(db)
+    await trigger_debounced_osrm_update()
 
     return VoteResponse(
         report_id=report.report_id,
