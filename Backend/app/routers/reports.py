@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List, Optional
 
 from app.database import get_db
 from app.models.category import Category
@@ -24,7 +23,6 @@ from app.services.dirty_segment_service import recalculate_dirty_segments
 from app.services.osrm_updater_service import trigger_debounced_osrm_update
 
 router = APIRouter(
-
     prefix="/reports",
     tags=["Reports"]
 )
@@ -40,7 +38,6 @@ async def get_categories(
     )
     categories = result.scalars().all()
 
-    # Seed default categories if database table is empty
     if not categories:
         default_cats = [
             ("Theft", "Mobile, vehicle, or item theft", 50.0, 70.0),
@@ -68,43 +65,41 @@ async def get_categories(
     ]
 
 
-@router.post("/create", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=ReportResponse, status_code=201)
 async def create_report(
-    payload: ReportCreate,
+    request: ReportCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Fetch category to get min/max severity range
     cat_result = await db.execute(
-        select(Category).where(Category.category_id == payload.category_id)
+        select(Category).where(Category.category_id == request.category_id)
     )
-    category = cat_result.scalars().first()
+    category = cat_result.scalar_one_or_none()
+
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 
     s_min = getattr(category, "severity_min", 50.0)
     s_max = getattr(category, "severity_max", 70.0)
-    computed_sev = calculate_computed_severity(s_min, s_max, payload.user_rating)
+    computed_sev = calculate_computed_severity(s_min, s_max, request.user_rating)
 
-    # Locate target road segment
-    nearest_seg = await find_nearest_road_segment(db, payload.latitude, payload.longitude)
+    nearest_seg = await find_nearest_road_segment(db, request.latitude, request.longitude)
     seg_id = nearest_seg.segment_id if nearest_seg else None
 
-    # Mark segment as dirty if bound
     if nearest_seg:
         nearest_seg.is_dirty = True
 
     new_report = Report(
-        user_id=None if payload.is_anonymous else current_user.user_id,
-        category_id=payload.category_id,
+        user_id=None if request.is_anonymous else current_user.user_id,
+        category_id=request.category_id,
         road_segment_id=seg_id,
-        user_rating=payload.user_rating,
+        user_rating=request.user_rating,
         computed_severity=computed_sev,
-        description=payload.description,
-        latitude=payload.latitude,
-        longitude=payload.longitude,
-        photos=payload.photos,
-        is_anonymous=payload.is_anonymous,
+        description=request.description,
+        latitude=request.latitude,
+        longitude=request.longitude,
+        photos=request.photos,
+        is_anonymous=request.is_anonymous,
         status="PENDING",
         upvotes=0,
         downvotes=0,
@@ -115,7 +110,6 @@ async def create_report(
     await db.commit()
     await db.refresh(new_report)
 
-    # Trigger dirty segment recalculation and debounced OSRM customize pipeline
     await recalculate_dirty_segments(db)
     await trigger_debounced_osrm_update()
 
@@ -141,63 +135,58 @@ async def create_report(
 @router.post("/{report_id}/vote", response_model=VoteResponse)
 async def vote_report(
     report_id: int,
-    payload: VoteRequest,
+    request: VoteRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if payload.vote_type not in (1, -1):
+    if request.vote_type not in (1, -1):
         raise HTTPException(status_code=400, detail="vote_type must be 1 (upvote) or -1 (downvote)")
 
-    # Fetch report
     rep_result = await db.execute(select(Report).where(Report.report_id == report_id))
-    report = rep_result.scalars().first()
+    report = rep_result.scalar_one_or_none()
+
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 
-    # Check for existing vote by user (one-time voting)
     vote_result = await db.execute(
         select(ReportVote).where(
             ReportVote.report_id == report_id,
             ReportVote.user_id == current_user.user_id
         )
     )
-    existing_vote = vote_result.scalars().first()
+    existing_vote = vote_result.scalar_one_or_none()
+
     if existing_vote:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
+            status_code=409,
             detail="User has already voted on this report"
         )
 
-    # Insert vote record
     new_vote = ReportVote(
         report_id=report_id,
         user_id=current_user.user_id,
-        vote_type=payload.vote_type
+        vote_type=request.vote_type
     )
     db.add(new_vote)
 
-    # Increment upvotes / downvotes
-    if payload.vote_type == 1:
+    if request.vote_type == 1:
         report.upvotes += 1
     else:
         report.downvotes += 1
 
-    # Recalculate confidence
     report.confidence_score = calculate_report_confidence(report.upvotes, report.downvotes)
 
-    # Mark associated segment dirty
     if report.road_segment_id:
         seg_result = await db.execute(
             select(RoadSegment).where(RoadSegment.segment_id == report.road_segment_id)
         )
-        segment = seg_result.scalars().first()
+        segment = seg_result.scalar_one_or_none()
         if segment:
             segment.is_dirty = True
 
     await db.commit()
     await db.refresh(report)
 
-    # Recalculate dirty segments and trigger debounced OSRM customize pipeline
     await recalculate_dirty_segments(db)
     await trigger_debounced_osrm_update()
 
@@ -250,7 +239,7 @@ async def get_my_reports(
 async def get_nearby_reports(
     lat: float = Query(...),
     lng: float = Query(...),
-    radius: float = Query(5000.0, description="Radius in meters"),
+    radius: float = Query(5000.0),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

@@ -1,11 +1,11 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 
 
 class ReportCreate(BaseModel):
     category_id: int
-    user_rating: int = Field(..., ge=1, le=5, description="Severity rating from 1 (minor) to 5 (critical)")
+    user_rating: int
     description: Optional[str] = None
     latitude: float
     longitude: float
@@ -35,7 +35,7 @@ class ReportResponse(BaseModel):
 
 
 class VoteRequest(BaseModel):
-    vote_type: int = Field(..., description="1 for upvote, -1 for downvote")
+    vote_type: int
 
 
 class VoteResponse(BaseModel):

@@ -36,7 +36,7 @@ async def get_speed_limit(
         result = await db.execute(
             select(RoadSegment).where(RoadSegment.segment_id == segment_id)
         )
-        segment = result.scalars().first()
+        segment = result.scalar_one_or_none()
 
     if not segment and (lat is not None and lng is not None):
         segment = await find_nearest_road_segment(db, lat, lng)
@@ -55,9 +55,9 @@ async def get_speed_limit(
 
 @router.post("/route-safety", response_model=RouteSafetyResponse)
 async def analyze_route_safety(
-    payload: RouteSafetyRequest,
+    request: RouteSafetyRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    safety_response = await evaluate_osrm_routes(payload.origin, payload.destination, db)
+    safety_response = await evaluate_osrm_routes(request.origin, request.destination, db)
     return safety_response
