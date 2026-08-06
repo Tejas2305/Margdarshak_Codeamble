@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -61,6 +62,7 @@ const weeklyData = [
 export default function DashboardScreen() {
   const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
+  const navigation = useNavigation();
   
   const [nightMode, setNightMode] = useState(false);
   const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
@@ -92,6 +94,12 @@ export default function DashboardScreen() {
           <Text style={[styles.headerTitle, { color: colors.text }]}>Dashboard</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Safety Overview</Text>
         </View>
+        <TouchableOpacity
+          style={styles.apiTestButton}
+          onPress={() => navigation.navigate('APITest' as never)}
+        >
+          <MaterialCommunityIcons name="api" size={24} color={colors.primary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -234,6 +242,12 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  apiTestButton: {
+    padding: 8,
   },
   headerTitle: {
     fontSize: 24,
