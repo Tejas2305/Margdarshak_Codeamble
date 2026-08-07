@@ -64,17 +64,18 @@
 
 | API | Status | Taken By |
 |---|---|---|
-| POST /auth/send-otp | Pending | |
-| POST /auth/verify-otp | Pending | |
+| POST /auth/send-email-otp | Pending | |
+| POST /auth/verify-email-otp | Pending | |
+| POST /auth/send-phone-otp | Done |Tanishka |
+| POST /auth/verify-phone-otp | Done | Tanishka |
 | POST /auth/forgot-password | Pending | |
-| POST /auth/reset-password | Pending | |
-| Google OAuth Login | Pending | |
+| Google OAuth Login | Pending | |  
 
 **0 / 5 done**
 
 ## Explicitly skipped (confirmed, not building)
 
-- POST /sos/notify-contacts
+- POST /sos/notify-contacts-----------------------------------------done-------------tanishka
 - POST /places/rate
 - POST /analytics/track
 - POST /users/upload-profile-photo

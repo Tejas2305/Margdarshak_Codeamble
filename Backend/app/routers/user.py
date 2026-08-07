@@ -6,11 +6,30 @@ from app.schemas.user import ChangePasswordRequest
 from app.utils.password import verify_password, hash_password
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UpdateProfileRequest, ChangePasswordRequest
+from app.schemas.user import (
+    UpdateProfileRequest,
+    ChangePasswordRequest,
+    SendOTPRequest,
+    VerifyOTPRequest,
+)
+from app.utils.email_verification import (
+    send_email_otp,
+    verify_email_otp
+)
 from app.utils.auth import get_current_user
 from app.models.user import User
 from app.utils.auth import get_current_user
+from app.schemas.user import (
+    UpdateProfileRequest,
+    ChangePasswordRequest,
+    SendOTPRequest,
+    VerifyOTPRequest,
+)
 
+from app.utils.phone_verification import (
+    send_phone_otp,
+    verify_phone_otp,
+)
 router = APIRouter(
     prefix="/users",
     tags=["Users"]
@@ -28,7 +47,8 @@ async def get_profile(
         "email": current_user.email,
         "phone_number": current_user.phone_number,
         "role_id": current_user.role_id,
-        "is_verified": current_user.is_verified,
+        "email_verified": current_user.email_verified,
+        "phone_verified": current_user.phone_verified,
         "account_status": current_user.account_status
     }
 
@@ -99,3 +119,41 @@ async def delete_account(
     return {
         "message": "Account deleted successfully"
     }
+
+@router.post("/send-phone-otp")
+async def send_phone_otp_api(request: SendOTPRequest):
+    send_phone_otp(request.phone_number)
+
+    return {
+        "message": "OTP sent successfully"
+    }
+
+@router.post("/verify-phone-otp")
+async def verify_phone_otp_endpoint(
+    request: VerifyOTPRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
+    is_verified = verify_phone_otp(
+        current_user.phone_number,
+        request.otp
+    )
+
+    if not is_verified:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid OTP"
+        )
+
+    # Update database
+    current_user.phone_verified = True
+
+    await db.commit()
+
+    await db.refresh(current_user)
+
+    return {
+        "message": "Phone number verified successfully"
+    }
+

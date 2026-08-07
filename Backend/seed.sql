@@ -418,3 +418,18 @@ CREATE TABLE sos_events (
 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE users
+RENAME COLUMN is_verified TO email_verified;
+
+ALTER TABLE users
+ADD COLUMN phone_verified BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE email_verification_otps (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    otp VARCHAR(6) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    is_used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

@@ -56,6 +56,7 @@ async def register(
     request: RegisterRequest,
     db: AsyncSession = Depends(get_db)
 ):
+
     result = await db.execute(
         select(User).where(User.email == request.email)
     )
@@ -75,22 +76,25 @@ async def register(
         last_name=request.last_name,
         email=request.email,
         phone_number=request.phone_number,
-        date_of_birth=request.date_of_birth,
         password_hash=hashed_password,
         role_id=1,
-        is_verified=False,
+        email_verified=False,
+        phone_verified=False,
         account_status="ACTIVE"
     )
 
     db.add(new_user)
+
+    await db.flush()
+
     await db.commit()
+
     await db.refresh(new_user)
 
     return {
         "message": "User registered successfully",
         "user_id": new_user.user_id
     }
-
 
 @router.post("/login", response_model=AuthResponse)
 async def login(
