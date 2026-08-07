@@ -5,7 +5,10 @@ from jose import JWTError, jwt
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
-
+from app.schemas.password_reset import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+)
 from app.config import ALGORITHM, REFRESH_TOKEN_EXPIRE_DAYS, SECRET_KEY
 from app.database import get_db
 from app.models.refresh_token import RefreshToken
@@ -18,7 +21,25 @@ from app.schemas.auth import (
 )
 from app.utils.password import hash_password, verify_password
 from app.utils.auth import create_access_token, create_refresh_token
+from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import select, delete
+
+from app.models.password_reset_otp import PasswordResetOTP
+from app.models.refresh_token import RefreshToken
+
+from app.schemas.auth import (
+    ForgotPasswordRequest,
+    VerifyForgotPasswordOTPRequest,
+    ResetPasswordRequest,
+)
+
+from app.utils.email_service import (
+    generate_otp,
+    send_email_otp,
+)
+
+from app.utils.password import hash_password
 # Create router FIRST
 router = APIRouter(
     prefix="/auth",
@@ -56,6 +77,7 @@ async def register(
     request: RegisterRequest,
     db: AsyncSession = Depends(get_db)
 ):
+
     result = await db.execute(
         select(User).where(User.email == request.email)
     )
@@ -75,22 +97,25 @@ async def register(
         last_name=request.last_name,
         email=request.email,
         phone_number=request.phone_number,
-        date_of_birth=request.date_of_birth,
         password_hash=hashed_password,
         role_id=1,
-        is_verified=False,
+        email_verified=False,
+        phone_verified=False,
         account_status="ACTIVE"
     )
 
     db.add(new_user)
+
+    await db.flush()
+
     await db.commit()
+
     await db.refresh(new_user)
 
     return {
         "message": "User registered successfully",
         "user_id": new_user.user_id
     }
-
 
 @router.post("/login", response_model=AuthResponse)
 async def login(
@@ -238,3 +263,168 @@ async def logout(
         "message": "Logged out successfully"
     }
 
+@router.post("/forgot-password")
+async def forgot_password(
+    request: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    # Find user
+    result = await db.execute(
+        select(User).where(User.email == request.email)
+    )
+
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    # Generate OTP
+    otp = generate_otp()
+
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+    # Delete previous OTP
+    await db.execute(
+        delete(PasswordResetOTP).where(
+            PasswordResetOTP.user_id == user.user_id
+        )
+    )
+
+    # Save new OTP
+    db.add(
+        PasswordResetOTP(
+            user_id=user.user_id,
+            otp=otp,
+            expires_at=expires_at
+        )
+    )
+
+    await db.commit()
+
+    # Send email
+    status = send_email_otp(
+        user.email,
+        otp
+    )
+
+    if status != 202:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send OTP"
+        )
+
+    return {
+        "message": "OTP sent successfully"
+    }
+
+@router.post("/verify-forgot-password-otp")
+async def verify_forgot_password_otp(
+    request: VerifyForgotPasswordOTPRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    # Find user
+    result = await db.execute(
+        select(User).where(User.email == request.email)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    # Find OTP
+    result = await db.execute(
+        select(PasswordResetOTP).where(
+            PasswordResetOTP.user_id == user.user_id,
+            PasswordResetOTP.otp == request.otp
+        )
+    )
+
+    otp_record = result.scalar_one_or_none()
+
+    if not otp_record:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid OTP"
+        )
+
+    # Check expiry
+    if otp_record.expires_at < datetime.now(timezone.utc):
+        await db.delete(otp_record)
+        await db.commit()
+
+        raise HTTPException(
+            status_code=400,
+            detail="OTP has expired"
+        )
+
+    return {
+        "message": "OTP verified successfully"
+    }
+
+@router.post("/reset-password")
+async def reset_password(
+    request: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    # Find user
+    result = await db.execute(
+        select(User).where(User.email == request.email)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    # Find OTP
+    result = await db.execute(
+        select(PasswordResetOTP).where(
+            PasswordResetOTP.user_id == user.user_id,
+            PasswordResetOTP.otp == request.otp
+        )
+    )
+
+    otp_record = result.scalar_one_or_none()
+
+    if not otp_record:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid OTP"
+        )
+
+    # Check expiry
+    if otp_record.expires_at < datetime.now(timezone.utc):
+        await db.delete(otp_record)
+        await db.commit()
+
+        raise HTTPException(
+            status_code=400,
+            detail="OTP has expired"
+        )
+
+    # Update password
+    user.password_hash = hash_password(request.new_password)
+
+    # Delete used OTP
+    await db.delete(otp_record)
+
+    # Revoke all refresh tokens
+    await db.execute(
+        delete(RefreshToken).where(
+            RefreshToken.user_id == user.user_id
+        )
+    )
+
+    await db.commit()
+
+    return {
+        "message": "Password reset successfully. Please login again."
+    }

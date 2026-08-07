@@ -30,7 +30,8 @@ class User(Base):
     Integer,
     ForeignKey("roles.role_id")
 )
-    is_verified = Column(Boolean, default=False)
+    email_verified = Column(Boolean, default=False)
+    phone_verified = Column(Boolean, default=False)
     account_status = Column(String(20), default="ACTIVE")
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(
@@ -40,6 +41,16 @@ class User(Base):
     )
     refresh_tokens = relationship(
     "RefreshToken",
+    back_populates="user",
+    cascade="all, delete-orphan"
+)
+    sos_events = relationship(
+    "SosEvent",
+    back_populates="user",
+    cascade="all, delete-orphan"
+)
+    emergency_contacts = relationship(
+    "EmergencyContact",
     back_populates="user",
     cascade="all, delete-orphan"
 )

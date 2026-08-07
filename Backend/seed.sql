@@ -393,3 +393,43 @@ ALTER TABLE ONLY public.users
 
 \unrestrict 9lcpuAQds0sX9JR3oR015r1IJgPQpRg2poML716T06xVcFqcClC0lHwH7iRKVUZ
 
+-- ===========================================
+-- SOS EVENTS
+-- ===========================================
+
+CREATE TABLE sos_events (
+    sos_id SERIAL PRIMARY KEY,
+
+    user_id INTEGER NOT NULL REFERENCES users(user_id)
+        ON DELETE CASCADE,
+
+    latitude DOUBLE PRECISION NOT NULL,
+
+    longitude DOUBLE PRECISION NOT NULL,
+
+    address TEXT,
+
+    battery_percentage INTEGER CHECK (
+        battery_percentage BETWEEN 0 AND 100
+    ),
+
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'
+        CHECK (status IN ('ACTIVE', 'CANCELLED', 'RESOLVED')),
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE users
+RENAME COLUMN is_verified TO email_verified;
+
+ALTER TABLE users
+ADD COLUMN phone_verified BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE email_verification_otps (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    otp VARCHAR(6) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    is_used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

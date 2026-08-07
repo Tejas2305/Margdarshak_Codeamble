@@ -44,7 +44,7 @@
 | GET /map/incidents/nearby *(radius in meters param)* | Pending | |
 | GET /search/places *(OSRM-enabled)* | Pending | |
 | GET /places/safety-score | Pending | |
-| POST /sos/trigger | Pending | |
+| POST /sos/trigger | Done | Tanishka|
 
 **4 / 10 done**
 
@@ -55,7 +55,7 @@
 | GET /user/safety-score | Pending | |
 | GET /user/safety-trends | Pending | |
 | GET /map/zones | Pending | |
-| GET /sos/history | Pending | |
+| GET /sos/history | Done | Tanishka |
 | GET /community/reports | Pending | |
 
 **0 / 5 done**
@@ -64,17 +64,18 @@
 
 | API | Status | Taken By |
 |---|---|---|
-| POST /auth/send-otp | Pending | |
-| POST /auth/verify-otp | Pending | |
-| POST /auth/forgot-password | Pending | |
-| POST /auth/reset-password | Pending | |
-| Google OAuth Login | Pending | |
+| POST /auth/send-email-otp | Done | Tanishka |
+| POST /auth/verify-email-otp | Done | Tanishka|
+| POST /auth/send-phone-otp | Done |Tanishka |
+| POST /auth/verify-phone-otp | Done | Tanishka |
+| POST /auth/forgot-password | Done | Tanishka |
+| Google OAuth Login | Pending | |  
 
 **0 / 5 done**
 
 ## Explicitly skipped (confirmed, not building)
 
-- POST /sos/notify-contacts
+- POST /sos/notify-contacts-----------------------------------------done-------------tanishka
 - POST /places/rate
 - POST /analytics/track
 - POST /users/upload-profile-photo
