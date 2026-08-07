@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { API_BASE_URL } from '@env';
 import * as SecureStore from 'expo-secure-store';
 
 const normalizeBaseUrl = (url?: string) => {
@@ -9,7 +8,8 @@ const normalizeBaseUrl = (url?: string) => {
   return baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
 };
 
-const BASE_URL = normalizeBaseUrl(API_BASE_URL);
+// Use hardcoded URL for development bypass mode
+const BASE_URL = normalizeBaseUrl('http://localhost:8000');
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
