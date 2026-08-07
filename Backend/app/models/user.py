@@ -43,3 +43,8 @@ class User(Base):
     back_populates="user",
     cascade="all, delete-orphan"
 )
+    sos_events = relationship(
+    "SosEvent",
+    back_populates="user",
+    cascade="all, delete-orphan"
+)
