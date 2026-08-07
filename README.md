@@ -64,8 +64,8 @@
 
 | API | Status | Taken By |
 |---|---|---|
-| POST /auth/send-email-otp | Pending | |
-| POST /auth/verify-email-otp | Pending | |
+| POST /auth/send-email-otp | Done | Tanishka |
+| POST /auth/verify-email-otp | Done | Tanishka|
 | POST /auth/send-phone-otp | Done |Tanishka |
 | POST /auth/verify-phone-otp | Done | Tanishka |
 | POST /auth/forgot-password | Pending | |
