@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/types';
@@ -7,6 +7,7 @@ import { Button, Input, PasswordInput } from '../../components/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
 import { colors, typography, spacing } from '../../theme';
+import { authService } from '../../services/api';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'> & {
   onAuthSuccess?: () => void;
@@ -19,9 +20,36 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRegister = () => {
-    navigation.navigate('OTPVerification', { email, flow: 'register' });
+  const handleRegister = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName || !trimmedEmail || !password) {
+      Alert.alert('Missing Details', 'Please enter your name, email, and password.');
+      return;
+    }
+
+    const [firstName, ...lastNameParts] = trimmedName.split(/\s+/);
+
+    try {
+      setIsSubmitting(true);
+      await authService.register({
+        first_name: firstName,
+        last_name: lastNameParts.join(' ') || firstName,
+        email: trimmedEmail,
+        password,
+      });
+
+      Alert.alert('Account Created', 'Please log in with your new account.', [
+        { text: 'OK', onPress: () => navigation.navigate('Login') },
+      ]);
+    } catch (error: any) {
+      Alert.alert('Registration Failed', error?.response?.data?.detail || 'Unable to create your account right now.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -76,10 +104,11 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
           />
 
           <TouchableOpacity
-            style={[styles.signupButton, { backgroundColor: colors.primary }]}
+            style={[styles.signupButton, { backgroundColor: colors.primary }, isSubmitting && styles.disabledButton]}
             onPress={handleRegister}
+            disabled={isSubmitting}
           >
-            <Text style={styles.signupButtonText}>Sign Up</Text>
+            <Text style={styles.signupButtonText}>{isSubmitting ? 'Creating...' : 'Sign Up'}</Text>
           </TouchableOpacity>
 
           <View style={styles.loginPrompt}>
@@ -146,6 +175,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 24,
     marginBottom: 24,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   signupButtonText: {
     fontSize: 16,

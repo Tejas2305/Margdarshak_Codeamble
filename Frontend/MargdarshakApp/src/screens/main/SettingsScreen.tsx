@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
+import { authService, userService } from '../../services/api';
+import { User } from '../../services/api/types';
 
 export default function SettingsScreen({ navigation }: any) {
   const { isDark, toggleTheme } = useTheme();
@@ -24,6 +26,9 @@ export default function SettingsScreen({ navigation }: any) {
   const [nightMode, setNightMode] = useState(false);
   const [autoAlert, setAutoAlert] = useState(false);
   const [shareData, setShareData] = useState(true);
+  const [profile, setProfile] = useState<User | null>(null);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   
   // Phone verification states
   const [phoneVerified, setPhoneVerified] = useState(false);
@@ -32,28 +37,72 @@ export default function SettingsScreen({ navigation }: any) {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
 
-  const handleSendOtp = () => {
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const result = await userService.getProfile();
+      setProfile(result);
+      setPhoneVerified(result.phone_verified);
+      if (result.phone_number) {
+        setPhoneNumber(result.phone_number.replace(/^\+91/, ''));
+      }
+    } catch (error: any) {
+      Alert.alert('Profile Unavailable', error?.response?.data?.detail || 'Unable to load profile.');
+    }
+  };
+
+  const profileInitials = useMemo(() => {
+    if (!profile) return '--';
+    return `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase() || '--';
+  }, [profile]);
+
+  const profileName = profile ? `${profile.first_name} ${profile.last_name}`.trim() : 'Loading profile';
+  const profileEmail = profile?.email || '';
+
+  const handleSendOtp = async () => {
     if (phoneNumber.length !== 10) {
       Alert.alert('Invalid Phone', 'Please enter a valid 10-digit phone number');
       return;
     }
-    // Simulate sending OTP
-    Alert.alert('OTP Sent', `Verification code sent to +91 ${phoneNumber}`);
-    setShowOtpInput(true);
+
+    const formattedPhone = `+91${phoneNumber}`;
+    try {
+      setIsSendingOtp(true);
+      await userService.updateProfile({ phone_number: formattedPhone });
+      await userService.sendPhoneOTP(formattedPhone);
+      Alert.alert('OTP Sent', `Verification code sent to ${formattedPhone}`);
+      setShowOtpInput(true);
+      await loadProfile();
+    } catch (error: any) {
+      Alert.alert('OTP Failed', error?.response?.data?.detail || 'Unable to send OTP right now.');
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     if (otp.length !== 6) {
       Alert.alert('Invalid OTP', 'Please enter the 6-digit OTP');
       return;
     }
-    // Simulate OTP verification (in real app, verify with backend)
-    Alert.alert('Success', 'Phone number verified successfully!');
-    setPhoneVerified(true);
-    setShowPhoneModal(false);
-    setShowOtpInput(false);
-    setPhoneNumber('');
-    setOtp('');
+
+    try {
+      setIsVerifyingOtp(true);
+      await userService.verifyPhoneOTP(`+91${phoneNumber}`, otp);
+      Alert.alert('Success', 'Phone number verified successfully!');
+      setPhoneVerified(true);
+      setShowPhoneModal(false);
+      setShowOtpInput(false);
+      setOtp('');
+      await loadProfile();
+    } catch (error: any) {
+      Alert.alert('Verification Failed', error?.response?.data?.detail || 'Please check the OTP and try again.');
+    } finally {
+      setIsVerifyingOtp(false);
+    }
   };
 
   const handlePhoneVerification = () => {
@@ -132,8 +181,8 @@ export default function SettingsScreen({ navigation }: any) {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => {
-            // Navigate back to Auth stack
+          onPress: async () => {
+            await authService.logout();
             navigation.getParent()?.reset({
               index: 0,
               routes: [{ name: 'Auth' }],
@@ -153,8 +202,18 @@ export default function SettingsScreen({ navigation }: any) {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            Alert.alert('Account Deleted', 'Your account has been deleted');
+          onPress: async () => {
+            try {
+              await userService.deleteAccount();
+              await authService.logout();
+              Alert.alert('Account Deleted', 'Your account has been deleted');
+              navigation.getParent()?.reset({
+                index: 0,
+                routes: [{ name: 'Auth' }],
+              });
+            } catch (error: any) {
+              Alert.alert('Delete Failed', error?.response?.data?.detail || 'Unable to delete account right now.');
+            }
           },
         },
       ]
@@ -182,11 +241,11 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Profile Section */}
         <View style={dynamicStyles.profileCard}>
           <View style={dynamicStyles.avatar}>
-            <Text style={styles.avatarText}>JD</Text>
+            <Text style={styles.avatarText}>{profileInitials}</Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={dynamicStyles.profileName}>John Doe</Text>
-            <Text style={dynamicStyles.profileEmail}>john.doe@example.com</Text>
+            <Text style={dynamicStyles.profileName}>{profileName}</Text>
+            <Text style={dynamicStyles.profileEmail}>{profileEmail}</Text>
           </View>
           <TouchableOpacity style={dynamicStyles.editButton}>
             <Text style={dynamicStyles.editIcon}>✏</Text>
@@ -522,9 +581,9 @@ export default function SettingsScreen({ navigation }: any) {
                 <TouchableOpacity
                   style={[styles.modalButton, phoneNumber.length !== 10 && styles.modalButtonDisabled]}
                   onPress={handleSendOtp}
-                  disabled={phoneNumber.length !== 10}
+                  disabled={phoneNumber.length !== 10 || isSendingOtp}
                 >
-                  <Text style={styles.modalButtonText}>Send OTP</Text>
+                  <Text style={styles.modalButtonText}>{isSendingOtp ? 'Sending...' : 'Send OTP'}</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -546,9 +605,9 @@ export default function SettingsScreen({ navigation }: any) {
                 <TouchableOpacity
                   style={[styles.modalButton, otp.length !== 6 && styles.modalButtonDisabled]}
                   onPress={handleVerifyOtp}
-                  disabled={otp.length !== 6}
+                  disabled={otp.length !== 6 || isVerifyingOtp}
                 >
-                  <Text style={styles.modalButtonText}>Verify OTP</Text>
+                  <Text style={styles.modalButtonText}>{isVerifyingOtp ? 'Verifying...' : 'Verify OTP'}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity

@@ -7,6 +7,10 @@ import {
   AuthResponse,
   RefreshTokenRequest,
   LogoutRequest,
+  ForgotPasswordRequest,
+  VerifyForgotPasswordOTPRequest,
+  ResetPasswordRequest,
+  MessageResponse,
 } from './types';
 
 class AuthService {
@@ -76,6 +80,30 @@ class AuthService {
     // Clear stored tokens
     await SecureStore.deleteItemAsync('access_token');
     await SecureStore.deleteItemAsync('refresh_token');
+  }
+
+  async forgotPassword(email: string): Promise<MessageResponse> {
+    const response = await apiClient.post<MessageResponse>(
+      '/auth/forgot-password',
+      { email } satisfies ForgotPasswordRequest
+    );
+    return response.data;
+  }
+
+  async verifyForgotPasswordOTP(email: string, otp: string): Promise<MessageResponse> {
+    const response = await apiClient.post<MessageResponse>(
+      '/auth/verify-forgot-password-otp',
+      { email, otp } satisfies VerifyForgotPasswordOTPRequest
+    );
+    return response.data;
+  }
+
+  async resetPassword(email: string, otp: string, newPassword: string): Promise<MessageResponse> {
+    const response = await apiClient.post<MessageResponse>(
+      '/auth/reset-password',
+      { email, otp, new_password: newPassword } satisfies ResetPasswordRequest
+    );
+    return response.data;
   }
 
   /**

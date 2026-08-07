@@ -1,53 +1,128 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
+  Alert,
   ScrollView,
-  Dimensions,
   StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
+import { mapService, reportService } from '../../services/api';
+import { Report, SpeedLimitResponse } from '../../services/api/types';
 
-const { width } = Dimensions.get('window');
+const DEFAULT_LOCATION = {
+  latitude: 18.5204,
+  longitude: 73.8567,
+};
 
-// Mock incident data
-const mockIncidents = [
-  { id: '1', type: 'Road Work', time: '2h ago' },
-  { id: '2', type: 'Patrol', time: '30m ago' },
-  { id: '3', type: 'Accident', time: '1h ago' },
-];
+const DEFAULT_DESTINATION = {
+  lat: 18.5314,
+  lng: 73.8446,
+};
+
+const formatTimeAgo = (value?: string) => {
+  if (!value) return 'Recently';
+
+  const createdAt = new Date(value).getTime();
+  if (Number.isNaN(createdAt)) return 'Recently';
+
+  const diffMinutes = Math.max(1, Math.floor((Date.now() - createdAt) / 60000));
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+
+  return `${Math.floor(diffHours / 24)}d ago`;
+};
+
+const getSafetyLabel = (riskScore?: number) => {
+  if (riskScore === undefined) return 'Checking';
+  if (riskScore < 25) return 'Very Safe';
+  if (riskScore < 50) return 'Moderate';
+  if (riskScore < 75) return 'Caution';
+  return 'High Risk';
+};
 
 export default function MapScreen({ navigation }: any) {
   const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
-  const [searchQuery, setSearchQuery] = useState('');
   const insets = useSafeAreaInsets();
+
+  const [coordinates, setCoordinates] = useState(DEFAULT_LOCATION);
+  const [nearbyReports, setNearbyReports] = useState<Report[]>([]);
+  const [speedInfo, setSpeedInfo] = useState<SpeedLimitResponse | null>(null);
+  const [isLoadingSafety, setIsLoadingSafety] = useState(true);
+
+  useEffect(() => {
+    loadMapData();
+  }, []);
+
+  const loadMapData = async () => {
+    try {
+      setIsLoadingSafety(true);
+      const currentCoordinates = await resolveCurrentLocation();
+      setCoordinates(currentCoordinates);
+
+      try {
+        const speedLimit = await mapService.getSpeedLimit({
+          lat: currentCoordinates.latitude,
+          lng: currentCoordinates.longitude,
+        });
+        setSpeedInfo(speedLimit);
+      } catch {
+        setSpeedInfo(null);
+      }
+
+      const reports = await reportService.getNearbyReports(currentCoordinates.latitude, currentCoordinates.longitude);
+      setNearbyReports(reports);
+    } catch (error: any) {
+      Alert.alert('Map Data Unavailable', error?.response?.data?.detail || 'Unable to load safety data right now.');
+    } finally {
+      setIsLoadingSafety(false);
+    }
+  };
+
+  const resolveCurrentLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      return DEFAULT_LOCATION;
+    }
+
+    const position = await Location.getCurrentPositionAsync({});
+    return {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+    };
+  };
+
+  const riskScore = speedInfo?.risk_score;
+  const safetyScore = riskScore === undefined ? null : Math.max(0, Math.min(10, 10 - riskScore / 10));
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
-      {/* Map Area */}
       <View style={styles.mapContainer}>
         <View style={[styles.mapPlaceholder, { backgroundColor: colors.surfaceVariant }]}>
           <Text style={[styles.mapText, { color: colors.text }]}>Map View</Text>
-          <Text style={[styles.mapSubtext, { color: colors.textSecondary }]}>Interactive map area</Text>
+          <Text style={[styles.mapSubtext, { color: colors.textSecondary }]}>
+            {coordinates.latitude.toFixed(5)}, {coordinates.longitude.toFixed(5)}
+          </Text>
         </View>
       </View>
 
-      {/* Search Bar */}
       <View style={[styles.searchContainer, { top: insets.top + 12 }]}>
         <TouchableOpacity
           style={[styles.searchBar, { backgroundColor: colors.surface }]}
           onPress={() => navigation.navigate('Search')}
           activeOpacity={0.8}
         >
-          <Text style={[styles.searchIcon, { color: colors.textSecondary }]}>🔍</Text>
+          <Text style={[styles.searchIcon, { color: colors.textSecondary }]}>Search</Text>
           <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>Search destination</Text>
         </TouchableOpacity>
 
@@ -55,11 +130,10 @@ export default function MapScreen({ navigation }: any) {
           style={[styles.iconButton, { backgroundColor: colors.surface }]}
           onPress={() => navigation.navigate('Settings')}
         >
-          <Text style={[styles.iconText, { color: colors.textSecondary }]}>⚙</Text>
+          <Text style={[styles.iconText, { color: colors.textSecondary }]}>Set</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Emergency Button - Top Right */}
       <TouchableOpacity
         style={[styles.emergencyButton, { top: insets.top + 72 }]}
         onPress={() => navigation.navigate('SOS')}
@@ -67,28 +141,41 @@ export default function MapScreen({ navigation }: any) {
         <Text style={styles.emergencyIcon}>!</Text>
       </TouchableOpacity>
 
-      {/* Bottom Sheet - Safety Info + Nearby Activity */}
       <View style={[styles.bottomSheet, { backgroundColor: colors.surface }]}>
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
-        
-        {/* Safety Score - Inside Bottom Sheet */}
+
         <View style={[styles.safetyCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <View style={styles.safetyRow}>
             <View style={styles.safetyLeft}>
-              <Text style={[styles.safetyLabel, { color: colors.textSecondary }]}>Current Area</Text>
-              <Text style={[styles.safetyStatus, { color: colors.text }]}>Very Safe</Text>
+              <Text style={[styles.safetyLabel, { color: colors.textSecondary }]}>
+                {speedInfo?.road_name || 'Current Area'}
+              </Text>
+              <Text style={[styles.safetyStatus, { color: colors.text }]}>
+                {isLoadingSafety ? 'Loading...' : getSafetyLabel(riskScore)}
+              </Text>
             </View>
             <View style={styles.scoreContainer}>
-              <Text style={styles.scoreValue}>8.9</Text>
+              <Text style={styles.scoreValue}>{safetyScore === null ? '--' : safetyScore.toFixed(1)}</Text>
               <Text style={[styles.scoreLabel, { color: colors.textSecondary }]}>/10</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('RouteComparison')}>
-            <Text style={[styles.linkText, { color: colors.primary }]}>Compare routes →</Text>
+          {speedInfo && (
+            <Text style={[styles.speedText, { color: colors.textSecondary }]}>
+              Speed limit {speedInfo.updated_speed_kmh} km/h, risk {speedInfo.risk_score.toFixed(1)}
+            </Text>
+          )}
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('RouteComparison', {
+                origin: { lat: coordinates.latitude, lng: coordinates.longitude },
+                destination: DEFAULT_DESTINATION,
+              })
+            }
+          >
+            <Text style={[styles.linkText, { color: colors.primary }]}>Compare routes</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Nearby Activity */}
         <Text style={[styles.sheetTitle, { color: colors.text }]}>Nearby Activity</Text>
         <ScrollView
           horizontal
@@ -96,12 +183,23 @@ export default function MapScreen({ navigation }: any) {
           style={styles.incidentsList}
           contentContainerStyle={styles.incidentsContent}
         >
-          {mockIncidents.map((incident) => (
-            <View key={incident.id} style={[styles.incidentCard, { backgroundColor: colors.surfaceVariant }]}>
-              <Text style={[styles.incidentType, { color: colors.text }]}>{incident.type}</Text>
-              <Text style={[styles.incidentTime, { color: colors.textSecondary }]}>{incident.time}</Text>
+          {nearbyReports.length === 0 ? (
+            <View style={[styles.incidentCard, { backgroundColor: colors.surfaceVariant }]}>
+              <Text style={[styles.incidentType, { color: colors.text }]}>No recent reports</Text>
+              <Text style={[styles.incidentTime, { color: colors.textSecondary }]}>Area is quiet</Text>
             </View>
-          ))}
+          ) : (
+            nearbyReports.map((report) => (
+              <View key={report.report_id} style={[styles.incidentCard, { backgroundColor: colors.surfaceVariant }]}>
+                <Text style={[styles.incidentType, { color: colors.text }]}>
+                  {report.category_name || `Category ${report.category_id}`}
+                </Text>
+                <Text style={[styles.incidentTime, { color: colors.textSecondary }]}>
+                  {formatTimeAgo(report.created_at)}
+                </Text>
+              </View>
+            ))
+          )}
         </ScrollView>
       </View>
     </View>
@@ -151,7 +249,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   searchIcon: {
-    fontSize: 18,
+    fontSize: 12,
     marginRight: 12,
   },
   searchPlaceholder: {
@@ -170,7 +268,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   iconText: {
-    fontSize: 18,
+    fontSize: 12,
   },
   emergencyButton: {
     position: 'absolute',
@@ -254,6 +352,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginLeft: 4,
   },
+  speedText: {
+    fontSize: 12,
+    marginBottom: 10,
+  },
   linkText: {
     fontSize: 14,
     fontWeight: '400',
@@ -270,7 +372,7 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   incidentCard: {
-    width: 120,
+    width: 140,
     borderRadius: 12,
     padding: 12,
     marginRight: 12,

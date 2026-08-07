@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -17,36 +17,17 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
+import { emergencyContactService, reportService } from '../../services/api';
+import { EmergencyContact, Report } from '../../services/api/types';
 
 const { width } = Dimensions.get('window');
 
 // Mock data - Professional, no colors
-const emergencyContacts = [
+const emergencyNumbers = [
   { id: '1', name: 'Police', number: '100' },
   { id: '2', name: 'Ambulance', number: '102' },
   { id: '3', name: 'Fire', number: '101' },
   { id: '4', name: 'Women Helpline', number: '1091' },
-];
-
-const recentAlerts = [
-  {
-    id: '1',
-    type: 'High Crime Area',
-    location: 'Downtown Plaza',
-    time: '2h ago',
-  },
-  {
-    id: '2',
-    type: 'Road Closure',
-    location: 'Main Street',
-    time: '4h ago',
-  },
-  {
-    id: '3',
-    type: 'Patrol Activity',
-    location: 'City Center',
-    time: '6h ago',
-  },
 ];
 
 const weeklyData = [
@@ -66,9 +47,54 @@ export default function DashboardScreen() {
   
   const [nightMode, setNightMode] = useState(false);
   const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
-  const safetyScore = 850;
+  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
   const maxScore = 1000;
+  const safetyScore = useMemo(() => {
+    if (reports.length === 0) return 850;
+    const averageSeverity = reports.reduce((sum, report) => sum + report.computed_severity, 0) / reports.length;
+    return Math.max(100, Math.round(1000 - averageSeverity * 10));
+  }, [reports]);
   const percentage = (safetyScore / maxScore) * 100;
+  const dashboardContacts = contacts.length > 0
+    ? contacts.map((contact) => ({
+        id: String(contact.contact_id),
+        name: contact.name,
+        number: contact.phone_number,
+      }))
+    : emergencyNumbers;
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setIsLoadingDashboard(true);
+      const [contactResult, reportResult] = await Promise.all([
+        emergencyContactService.getContacts(),
+        reportService.getMyReports(1, 5),
+      ]);
+      setContacts(contactResult);
+      setReports(reportResult);
+    } catch (error: any) {
+      Alert.alert('Dashboard Unavailable', error?.response?.data?.detail || 'Unable to load dashboard data.');
+    } finally {
+      setIsLoadingDashboard(false);
+    }
+  };
+
+  const formatTimeAgo = (value?: string) => {
+    if (!value) return 'Recently';
+    const createdAt = new Date(value).getTime();
+    if (Number.isNaN(createdAt)) return 'Recently';
+    const diffMinutes = Math.max(1, Math.floor((Date.now() - createdAt) / 60000));
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${Math.floor(diffHours / 24)}d ago`;
+  };
 
   const handleCall = (number: string, name: string) => {
     Alert.alert(
@@ -187,21 +213,37 @@ export default function DashboardScreen() {
         {/* Recent Alerts */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Alerts</Text>
-          {recentAlerts.map((alert) => (
-            <TouchableOpacity key={alert.id} style={[styles.alertRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {reports.length === 0 ? (
+            <TouchableOpacity style={[styles.alertRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.alertLeft}>
-                <Text style={[styles.alertType, { color: colors.text }]}>{alert.type}</Text>
-                <Text style={[styles.alertLocation, { color: colors.textSecondary }]}>{alert.location}</Text>
+                <Text style={[styles.alertType, { color: colors.text }]}>
+                  {isLoadingDashboard ? 'Loading reports' : 'No reports filed'}
+                </Text>
+                <Text style={[styles.alertLocation, { color: colors.textSecondary }]}>Your recent report activity</Text>
               </View>
-              <Text style={[styles.alertTime, { color: colors.textSecondary }]}>{alert.time}</Text>
+              <Text style={[styles.alertTime, { color: colors.textSecondary }]}>{isLoadingDashboard ? '...' : 'Now'}</Text>
             </TouchableOpacity>
-          ))}
+          ) : (
+            reports.map((alert) => (
+              <TouchableOpacity key={alert.report_id} style={[styles.alertRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={styles.alertLeft}>
+                  <Text style={[styles.alertType, { color: colors.text }]}>
+                    {alert.category_name || `Category ${alert.category_id}`}
+                  </Text>
+                  <Text style={[styles.alertLocation, { color: colors.textSecondary }]}>
+                    {alert.status} near {alert.latitude.toFixed(4)}, {alert.longitude.toFixed(4)}
+                  </Text>
+                </View>
+                <Text style={[styles.alertTime, { color: colors.textSecondary }]}>{formatTimeAgo(alert.created_at)}</Text>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         {/* Emergency Contacts */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Emergency Contacts</Text>
-          {emergencyContacts.map((contact) => (
+          {dashboardContacts.map((contact) => (
             <TouchableOpacity
               key={contact.id}
               style={[styles.contactRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -220,7 +262,7 @@ export default function DashboardScreen() {
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Safe Routes</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.text }]}>18</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{reports.length}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Reports Filed</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>

@@ -1,58 +1,102 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Dimensions,
-  StatusBar,
+  ActivityIndicator,
   Alert,
+  Dimensions,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { mapService } from '../../services/api';
+import { LocationPoint, RouteSafetyOption } from '../../services/api/types';
 import { theme } from '../../theme';
 
 const { width, height } = Dimensions.get('window');
 
-// Mock route data
-const routes = {
-  safest: {
-    id: 'safest',
-    name: 'Safest Route',
-    safetyScore: 9.5,
-    distance: '5.2 km',
-    duration: '18 mins',
-    color: '#4CAF50',
-    features: ['Well-lit streets', 'High patrol', 'CCTV coverage', 'Low crime rate'],
-  },
-  fastest: {
-    id: 'fastest',
-    name: 'Fastest Route',
-    safetyScore: 4.2,
-    distance: '3.8 km',
-    duration: '12 mins',
-    color: '#9E9E9E',
-    features: ['Shorter distance', 'Less traffic', 'Highway route', 'Faster ETA'],
-  },
-  balanced: {
-    id: 'balanced',
-    name: 'Balanced Route',
-    safetyScore: 7.8,
-    distance: '4.5 km',
-    duration: '15 mins',
-    color: '#2196F3',
-    features: ['Good safety', 'Moderate traffic', 'Mixed lighting', 'Reasonable time'],
-  },
+const DEFAULT_ORIGIN = {
+  lat: 18.5204,
+  lng: 73.8567,
 };
 
-export default function RouteComparisonScreen({ navigation }: any) {
-  const [selectedRoute, setSelectedRoute] = useState<string>('safest');
+const DEFAULT_DESTINATION = {
+  lat: 18.5314,
+  lng: 73.8446,
+};
+
+const formatDistance = (meters: number) => `${(meters / 1000).toFixed(1)} km`;
+
+const formatDuration = (seconds: number) => {
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  return `${minutes} mins`;
+};
+
+const getScoreColor = (score: number) => {
+  if (score >= 8) return '#4CAF50';
+  if (score >= 6) return '#FFC107';
+  if (score >= 4) return '#FF9800';
+  return '#F44336';
+};
+
+const getRouteName = (item: RouteSafetyOption, index: number) => {
+  if (item.is_safest) return 'Safest Route';
+  if (index === 0) return 'Fastest Route';
+  return `Route ${index + 1}`;
+};
+
+const normalizePoint = (value: unknown, fallback: LocationPoint): LocationPoint => {
+  const candidate = value as Partial<LocationPoint> | undefined;
+  if (typeof candidate?.lat === 'number' && typeof candidate?.lng === 'number') {
+    return { lat: candidate.lat, lng: candidate.lng };
+  }
+
+  return fallback;
+};
+
+export default function RouteComparisonScreen({ navigation, route }: any) {
+  const params = route?.params || {};
+  const origin = normalizePoint(params.origin, DEFAULT_ORIGIN);
+  const destination = normalizePoint(params.destination, DEFAULT_DESTINATION);
+
+  const [routes, setRoutes] = useState<RouteSafetyOption[]>([]);
+  const [recommendedRouteIndex, setRecommendedRouteIndex] = useState(0);
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadRoutes();
+  }, []);
+
+  const selectedRoute = useMemo(
+    () => routes.find((item) => item.route_index === selectedRouteIndex) || routes[0],
+    [routes, selectedRouteIndex]
+  );
+
+  const loadRoutes = async () => {
+    try {
+      setIsLoading(true);
+      const response = await mapService.analyzeRouteSafety(origin, destination);
+      setRoutes(response.routes);
+      setRecommendedRouteIndex(response.recommended_route_index);
+      setSelectedRouteIndex(response.recommended_route_index);
+    } catch (error: any) {
+      Alert.alert('Routes Unavailable', error?.response?.data?.detail || 'Unable to compare routes right now.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleStartNavigation = () => {
-    const route = routes[selectedRoute as keyof typeof routes];
+    if (!selectedRoute) {
+      Alert.alert('No Route Selected', 'Please wait for route options to load.');
+      return;
+    }
+
     Alert.alert(
       'Start Navigation',
-      `Navigate via ${route.name}?\n\nSafety Score: ${route.safetyScore}/10\nDistance: ${route.distance}\nETA: ${route.duration}`,
+      `Navigate via ${getRouteName(selectedRoute, selectedRoute.route_index)}?\n\nSafety Score: ${selectedRoute.safety_index.toFixed(1)}/10\nDistance: ${formatDistance(selectedRoute.distance_meters)}\nETA: ${formatDuration(selectedRoute.adjusted_duration_seconds)}`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -66,137 +110,124 @@ export default function RouteComparisonScreen({ navigation }: any) {
     );
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 8) return '#4CAF50';
-    if (score >= 6) return '#FFC107';
-    if (score >= 4) return '#FF9800';
-    return '#F44336';
-  };
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Map Placeholder */}
       <View style={styles.mapPlaceholder}>
         <Text style={styles.mapText}>Route Comparison</Text>
-        <Text style={styles.mapSubtext}>Select the best route for your journey</Text>
+        <Text style={styles.mapSubtext}>
+          {origin.lat.toFixed(4)}, {origin.lng.toFixed(4)} to {destination.lat.toFixed(4)}, {destination.lng.toFixed(4)}
+        </Text>
         <View style={styles.routeColors}>
           <View style={styles.routeColorItem}>
             <View style={[styles.colorDot, { backgroundColor: '#4CAF50' }]} />
-            <Text style={styles.colorText}>Safest</Text>
+            <Text style={styles.colorText}>Safer</Text>
           </View>
           <View style={styles.routeColorItem}>
-            <View style={[styles.colorDot, { backgroundColor: '#2196F3' }]} />
-            <Text style={styles.colorText}>Balanced</Text>
+            <View style={[styles.colorDot, { backgroundColor: '#FFC107' }]} />
+            <Text style={styles.colorText}>Moderate</Text>
           </View>
           <View style={styles.routeColorItem}>
-            <View style={[styles.colorDot, { backgroundColor: '#9E9E9E' }]} />
-            <Text style={styles.colorText}>Fastest</Text>
+            <View style={[styles.colorDot, { backgroundColor: '#F44336' }]} />
+            <Text style={styles.colorText}>Risky</Text>
           </View>
         </View>
       </View>
 
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backIcon}>←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+          <Text style={styles.headerButtonText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Compare Routes</Text>
-        <View style={styles.placeholder} />
+        <TouchableOpacity onPress={loadRoutes} style={styles.headerButton}>
+          <Text style={styles.headerButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Route Cards */}
-      <ScrollView
-        horizontal
-        style={styles.routesScroll}
-        contentContainerStyle={styles.routesContent}
-        showsHorizontalScrollIndicator={false}
-      >
-        {Object.values(routes).map((route) => {
-          const isSelected = selectedRoute === route.id;
-          const scoreColor = getScoreColor(route.safetyScore);
-
-          return (
-            <TouchableOpacity
-              key={route.id}
-              style={[
-                styles.routeCard,
-                isSelected && styles.routeCardSelected,
-                { borderColor: route.color },
-              ]}
-              onPress={() => setSelectedRoute(route.id)}
-            >
-              <View style={styles.routeHeader}>
-                <Text style={styles.routeName}>{route.name}</Text>
-                {isSelected && (
-                  <View style={[styles.selectedBadge, { backgroundColor: route.color }]}>
-                    <Text style={styles.selectedBadgeText}>✓</Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Safety Score */}
-              <View style={styles.scoreContainer}>
-                <View style={[styles.scoreCircle, { borderColor: scoreColor }]}>
-                  <Text style={[styles.scoreValue, { color: scoreColor }]}>
-                    {route.safetyScore}
-                  </Text>
-                  <Text style={styles.scoreMax}>/10</Text>
-                </View>
-                <View style={styles.scoreDetails}>
-                  <View style={styles.routeStat}>
-                    <Text style={styles.statLabel}>Distance</Text>
-                    <Text style={styles.routeStatValue}>{route.distance}</Text>
-                  </View>
-                  <View style={styles.routeStat}>
-                    <Text style={styles.statLabel}>Duration</Text>
-                    <Text style={styles.routeStatValue}>{route.duration}</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Features */}
-              <View style={styles.features}>
-                {route.features.map((feature, index) => (
-                  <View key={index} style={styles.feature}>
-                    <Text style={styles.featureDot}>•</Text>
-                    <Text style={styles.featureText}>{feature}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {/* Route Color Indicator */}
-              <View style={[styles.routeIndicator, { backgroundColor: route.color }]} />
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      {/* Start Navigation Button */}
-      <View style={styles.bottomContainer}>
-        <TouchableOpacity
-          style={styles.startButton}
-          onPress={handleStartNavigation}
-          activeOpacity={0.8}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading routes...</Text>
+        </View>
+      ) : routes.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>No routes found</Text>
+          <Text style={styles.emptyDescription}>Try again after checking backend OSRM routing data.</Text>
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          style={styles.routesScroll}
+          contentContainerStyle={styles.routesContent}
+          showsHorizontalScrollIndicator={false}
         >
+          {routes.map((item, index) => {
+            const isSelected = selectedRouteIndex === item.route_index;
+            const scoreColor = getScoreColor(item.safety_index);
+
+            return (
+              <TouchableOpacity
+                key={item.route_index}
+                style={[styles.routeCard, isSelected && styles.routeCardSelected, { borderColor: scoreColor }]}
+                onPress={() => setSelectedRouteIndex(item.route_index)}
+              >
+                <View style={styles.routeHeader}>
+                  <Text style={styles.routeName}>{getRouteName(item, index)}</Text>
+                  {item.route_index === recommendedRouteIndex && (
+                    <View style={[styles.selectedBadge, { backgroundColor: scoreColor }]}>
+                      <Text style={styles.selectedBadgeText}>Best</Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.scoreContainer}>
+                  <View style={[styles.scoreCircle, { borderColor: scoreColor }]}>
+                    <Text style={[styles.scoreValue, { color: scoreColor }]}>{item.safety_index.toFixed(1)}</Text>
+                    <Text style={styles.scoreMax}>/10</Text>
+                  </View>
+                  <View style={styles.scoreDetails}>
+                    <View style={styles.routeStat}>
+                      <Text style={styles.statLabel}>Distance</Text>
+                      <Text style={styles.routeStatValue}>{formatDistance(item.distance_meters)}</Text>
+                    </View>
+                    <View style={styles.routeStat}>
+                      <Text style={styles.statLabel}>Duration</Text>
+                      <Text style={styles.routeStatValue}>{formatDuration(item.adjusted_duration_seconds)}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.features}>
+                  {(item.warnings.length > 0 ? item.warnings : ['No safety warnings reported']).map((warning) => (
+                    <View key={warning} style={styles.feature}>
+                      <Text style={styles.featureDot}>-</Text>
+                      <Text style={styles.featureText}>{warning}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                <View style={[styles.routeIndicator, { backgroundColor: scoreColor }]} />
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      <View style={styles.bottomContainer}>
+        <TouchableOpacity style={styles.startButton} onPress={handleStartNavigation} activeOpacity={0.8}>
           <Text style={styles.startButtonText}>Start Navigation</Text>
         </TouchableOpacity>
 
-        {/* Route Info Summary */}
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>Safety Score</Text>
-            <Text style={styles.infoValue}>
-              {routes[selectedRoute as keyof typeof routes].safetyScore}/10
-            </Text>
+            <Text style={styles.infoValue}>{selectedRoute ? `${selectedRoute.safety_index.toFixed(1)}/10` : '--'}</Text>
           </View>
           <View style={styles.infoDivider} />
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>ETA</Text>
-            <Text style={styles.infoValue}>
-              {routes[selectedRoute as keyof typeof routes].duration}
-            </Text>
+            <Text style={styles.infoValue}>{selectedRoute ? formatDuration(selectedRoute.adjusted_duration_seconds) : '--'}</Text>
           </View>
         </View>
       </View>
@@ -227,6 +258,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
     marginBottom: 20,
+    textAlign: 'center',
   },
   routeColors: {
     flexDirection: 'row',
@@ -261,16 +293,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     ...theme.shadows.medium,
   },
-  backButton: {
-    width: 40,
+  headerButton: {
+    minWidth: 56,
     height: 40,
     borderRadius: 12,
     backgroundColor: theme.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 10,
   },
-  backIcon: {
-    fontSize: 24,
+  headerButtonText: {
+    fontSize: 12,
     color: theme.colors.text,
   },
   headerTitle: {
@@ -278,8 +311,35 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.text,
   },
-  placeholder: {
-    width: 40,
+  loadingContainer: {
+    position: 'absolute',
+    top: height * 0.45 - 40,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    gap: 8,
+  },
+  loadingText: {
+    color: theme.colors.textSecondary,
+  },
+  emptyState: {
+    position: 'absolute',
+    top: height * 0.45 - 60,
+    left: 24,
+    right: 24,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    padding: 18,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: 6,
+  },
+  emptyDescription: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
   },
   routesScroll: {
     position: 'absolute',
@@ -314,17 +374,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: theme.colors.text,
+    flex: 1,
   },
   selectedBadge: {
-    width: 24,
-    height: 24,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   selectedBadgeText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '700',
   },
   scoreContainer: {

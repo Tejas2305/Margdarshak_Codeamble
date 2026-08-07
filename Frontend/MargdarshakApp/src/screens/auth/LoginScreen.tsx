@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/types';
@@ -7,6 +7,7 @@ import { Button, Input, PasswordInput } from '../../components/ui';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
 import { colors, typography, spacing } from '../../theme';
+import { authService } from '../../services/api';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'> & {
   onAuthSuccess?: () => void;
@@ -18,13 +19,25 @@ export const LoginScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = () => {
-    // Navigate to Main app (no backend, just frontend)
-    if (email && password) {
-      navigation.getParent()?.navigate('Main');
-    } else {
-      alert('Please enter email and password');
+  const handleLogin = async () => {
+    if (!email.trim() || !password) {
+      Alert.alert('Missing Details', 'Please enter email and password');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await authService.login(email.trim(), password);
+      navigation.getParent()?.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      });
+    } catch (error: any) {
+      Alert.alert('Login Failed', error?.response?.data?.detail || 'Please check your credentials and try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -80,10 +93,11 @@ export const LoginScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.loginButton, { backgroundColor: colors.primary }]}
+            style={[styles.loginButton, { backgroundColor: colors.primary }, isSubmitting && styles.disabledButton]}
             onPress={handleLogin}
+            disabled={isSubmitting}
           >
-            <Text style={styles.loginButtonText}>Log In</Text>
+            <Text style={styles.loginButtonText}>{isSubmitting ? 'Logging In...' : 'Log In'}</Text>
           </TouchableOpacity>
 
           <View style={styles.signupPrompt}>
@@ -158,6 +172,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 24,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   loginButtonText: {
     fontSize: 16,

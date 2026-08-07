@@ -2,9 +2,18 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { API_BASE_URL } from '@env';
 import * as SecureStore from 'expo-secure-store';
 
+const normalizeBaseUrl = (url?: string) => {
+  const fallbackUrl = 'http://localhost:8000';
+  const baseUrl = (url || fallbackUrl).replace(/\/+$/, '');
+
+  return baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
+};
+
+const BASE_URL = normalizeBaseUrl(API_BASE_URL);
+
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL || 'http://localhost:8000',
+  baseURL: BASE_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -42,7 +51,7 @@ apiClient.interceptors.response.use(
         
         if (refreshToken) {
           const response = await axios.post(
-            `${API_BASE_URL}/auth/refresh`,
+            `${BASE_URL}/auth/refresh`,
             { refresh_token: refreshToken }
           );
 

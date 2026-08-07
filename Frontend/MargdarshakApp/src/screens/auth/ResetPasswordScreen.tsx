@@ -1,18 +1,39 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Alert, View, Text, StyleSheet } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { Button, PasswordInput } from '../../components/ui';
 import { colors, typography, spacing } from '../../theme';
+import { authService } from '../../services/api';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ResetPassword'>;
 
-export const ResetPasswordScreen: React.FC<Props> = ({ navigation }) => {
+export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
+  const { email, otp } = route.params;
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleReset = () => {
-    navigation.navigate('Success', { type: 'reset-password' });
+  const handleReset = async () => {
+    if (password.length < 6) {
+      Alert.alert('Invalid Password', 'Password must be at least 6 characters.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Passwords Do Not Match', 'Please confirm the same password.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await authService.resetPassword(email, otp, password);
+      navigation.navigate('Success', { type: 'reset-password' });
+    } catch (error: any) {
+      Alert.alert('Reset Failed', error?.response?.data?.detail || 'Unable to reset password right now.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -38,6 +59,8 @@ export const ResetPasswordScreen: React.FC<Props> = ({ navigation }) => {
           title="Reset Password"
           onPress={handleReset}
           fullWidth
+          loading={isSubmitting}
+          disabled={isSubmitting}
           style={{ marginTop: spacing.lg }}
         />
       </View>

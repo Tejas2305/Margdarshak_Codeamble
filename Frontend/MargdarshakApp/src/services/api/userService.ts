@@ -5,6 +5,7 @@ import {
   UpdateProfileResponse,
   ChangePasswordRequest,
   ChangePasswordResponse,
+  MessageResponse,
 } from './types';
 
 class UserService {
@@ -40,6 +41,31 @@ class UserService {
    */
   async deleteAccount(): Promise<{ message: string }> {
     const response = await apiClient.delete<{ message: string }>('/users/me');
+    return response.data;
+  }
+
+  async sendPhoneOTP(phoneNumber: string): Promise<MessageResponse> {
+    const response = await apiClient.post<MessageResponse>('/users/send-phone-otp', {
+      phone_number: phoneNumber,
+    });
+    return response.data;
+  }
+
+  async verifyPhoneOTP(phoneNumber: string, otp: string): Promise<MessageResponse> {
+    const response = await apiClient.post<MessageResponse>('/users/verify-phone-otp', {
+      phone_number: phoneNumber,
+      otp,
+    });
+    return response.data;
+  }
+
+  async sendEmailOTP(): Promise<MessageResponse> {
+    const response = await apiClient.post<MessageResponse>('/users/send-email-otp');
+    return response.data;
+  }
+
+  async verifyEmailOTP(otp: string): Promise<MessageResponse> {
+    const response = await apiClient.post<MessageResponse>('/users/verify-email-otp', { otp });
     return response.data;
   }
 }

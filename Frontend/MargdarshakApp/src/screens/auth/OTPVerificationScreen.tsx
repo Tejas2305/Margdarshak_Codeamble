@@ -1,21 +1,37 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Alert, View, Text, StyleSheet } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { Button, Input } from '../../components/ui';
 import { colors, typography, spacing } from '../../theme';
+import { authService } from '../../services/api';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'OTPVerification'>;
 
 export const OTPVerificationScreen: React.FC<Props> = ({ navigation, route }) => {
   const { email, flow } = route.params;
   const [otp, setOtp] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
+    if (otp.length !== 6) {
+      Alert.alert('Invalid Code', 'Please enter the 6-digit verification code.');
+      return;
+    }
+
     if (flow === 'register') {
-      navigation.navigate('Permissions');
-    } else {
+      navigation.navigate('Login');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await authService.verifyForgotPasswordOTP(email, otp);
       navigation.navigate('ResetPassword', { email, otp });
+    } catch (error: any) {
+      Alert.alert('Verification Failed', error?.response?.data?.detail || 'Please check the code and try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -40,6 +56,8 @@ export const OTPVerificationScreen: React.FC<Props> = ({ navigation, route }) =>
           title="Verify"
           onPress={handleVerify}
           fullWidth
+          loading={isSubmitting}
+          disabled={isSubmitting}
           style={{ marginTop: spacing.lg }}
         />
       </View>

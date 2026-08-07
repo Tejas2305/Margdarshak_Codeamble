@@ -1,41 +1,97 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Image,
-  Switch,
+  ActivityIndicator,
   Alert,
+  Image,
+  ScrollView,
   StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
+import { reportService } from '../../services/api';
+import { Category } from '../../services/api/types';
 
-const incidentCategories = [
-  { id: '1', name: 'Theft', icon: 'bag-personal' as const, color: '#5B8DEE', description: 'Report theft or robbery' },
-  { id: '2', name: 'Harassment', icon: 'account-alert' as const, color: '#E85D75', description: 'Report harassment' },
-  { id: '3', name: 'Suspicious Activity', icon: 'eye-outline' as const, color: '#F59E42', description: 'Report suspicious behavior' },
-  { id: '4', name: 'Accident', icon: 'car-side' as const, color: '#E8684A', description: 'Report traffic accident' },
-  { id: '5', name: 'Road Block', icon: 'road-variant' as const, color: '#9B87C7', description: 'Report road blockage' },
-  { id: '6', name: 'Fire', icon: 'fire' as const, color: '#E85D5D', description: 'Report fire incident' },
+const DEFAULT_LOCATION = {
+  latitude: 18.5204,
+  longitude: 73.8567,
+};
+
+const categoryStyles = [
+  { icon: 'bag-personal' as const, color: '#5B8DEE' },
+  { icon: 'account-alert' as const, color: '#E85D75' },
+  { icon: 'eye-outline' as const, color: '#F59E42' },
+  { icon: 'car-side' as const, color: '#E8684A' },
+  { icon: 'road-variant' as const, color: '#9B87C7' },
+  { icon: 'fire' as const, color: '#E85D5D' },
+  { icon: 'weather-night' as const, color: '#607D8B' },
+  { icon: 'dog' as const, color: '#795548' },
+  { icon: 'alert-circle-outline' as const, color: '#FF9800' },
+  { icon: 'shield-alert-outline' as const, color: '#009688' },
 ];
 
 export default function ReportsScreen() {
   const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
-  
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [location, setLocation] = useState('Current Location');
+  const [coordinates, setCoordinates] = useState(DEFAULT_LOCATION);
   const [description, setDescription] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [severityRating, setSeverityRating] = useState(5);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    loadCategories();
+    loadCurrentLocation();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setIsLoadingCategories(true);
+      const result = await reportService.getCategories();
+      setCategories(result);
+    } catch (error: any) {
+      Alert.alert('Unable to Load Categories', error?.response?.data?.detail || 'Please log in and try again.');
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+
+  const loadCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocation('Pune default location');
+        return;
+      }
+
+      const currentPosition = await Location.getCurrentPositionAsync({});
+      const nextCoordinates = {
+        latitude: currentPosition.coords.latitude,
+        longitude: currentPosition.coords.longitude,
+      };
+
+      setCoordinates(nextCoordinates);
+      setLocation(`${nextCoordinates.latitude.toFixed(5)}, ${nextCoordinates.longitude.toFixed(5)}`);
+    } catch {
+      setLocation('Pune default location');
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!selectedCategory) {
       Alert.alert('Error', 'Please select an incident category');
       return;
@@ -46,29 +102,39 @@ export default function ReportsScreen() {
       return;
     }
 
-    Alert.alert(
-      'Report Submitted',
-      'Thank you for reporting. Your report helps keep the community safe.',
-      [
+    try {
+      setIsSubmitting(true);
+      await reportService.createReport({
+        category_id: selectedCategory,
+        user_rating: severityRating,
+        description: description.trim(),
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+      });
+
+      Alert.alert('Report Submitted', 'Thank you for reporting. Your report helps keep the community safe.', [
         {
           text: 'OK',
           onPress: () => {
-            // Reset form
             setSelectedCategory(null);
             setDescription('');
             setIsAnonymous(false);
             setPhotos([]);
+            setSeverityRating(5);
           },
         },
-      ]
-    );
+      ]);
+    } catch (error: any) {
+      Alert.alert('Submission Failed', error?.response?.data?.detail || 'Unable to submit report right now.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-      
-      {/* Header */}
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+
       <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Report Incident</Text>
         <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Help keep your community safe</Text>
@@ -79,55 +145,88 @@ export default function ReportsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Category Selection */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>What happened?</Text>
-          <View style={styles.categoriesGrid}>
-            {incidentCategories.map((category) => (
+          {isLoadingCategories ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <View style={styles.categoriesGrid}>
+              {categories.map((category, index) => {
+                const visual = categoryStyles[index % categoryStyles.length];
+
+                return (
+                  <TouchableOpacity
+                    key={category.category_id}
+                    style={[
+                      styles.categoryCard,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      selectedCategory === category.category_id && [
+                        styles.categoryCardSelected,
+                        { borderColor: visual.color },
+                      ],
+                    ]}
+                    onPress={() => setSelectedCategory(category.category_id)}
+                  >
+                    <View style={[styles.categoryIconContainer, { backgroundColor: visual.color + '15' }]}>
+                      <MaterialCommunityIcons name={visual.icon as any} size={28} color={visual.color} />
+                    </View>
+                    <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
+                    <Text style={[styles.categoryDescription, { color: colors.textSecondary }]}>
+                      {category.description}
+                    </Text>
+                    {selectedCategory === category.category_id && (
+                      <View style={[styles.selectedBadge, { backgroundColor: visual.color }]}>
+                        <Text style={styles.selectedBadgeText}>OK</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Location</Text>
+          <TouchableOpacity
+            style={[styles.locationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={loadCurrentLocation}
+          >
+            <View style={styles.locationDetails}>
+              <Text style={[styles.locationText, { color: colors.text }]}>{location}</Text>
+              <Text style={[styles.locationSubtext, { color: colors.textSecondary }]}>Tap to refresh location</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Severity</Text>
+          <View style={styles.ratingRow}>
+            {[1, 2, 3, 4, 5].map((rating) => (
               <TouchableOpacity
-                key={category.id}
+                key={rating}
                 style={[
-                  styles.categoryCard,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                  selectedCategory === category.id && [styles.categoryCardSelected, { borderColor: colors.textSecondary }],
+                  styles.ratingButton,
+                  { borderColor: colors.border, backgroundColor: colors.surface },
+                  severityRating === rating && { backgroundColor: colors.primary, borderColor: colors.primary },
                 ]}
-                onPress={() => setSelectedCategory(category.id)}
+                onPress={() => setSeverityRating(rating)}
               >
-                <View style={[styles.categoryIconContainer, { backgroundColor: category.color + '15' }]}>
-                  <MaterialCommunityIcons 
-                    name={category.icon as any} 
-                    size={28} 
-                    color={category.color} 
-                  />
-                </View>
-                <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
-                <Text style={[styles.categoryDescription, { color: colors.textSecondary }]}>{category.description}</Text>
-                {selectedCategory === category.id && (
-                  <View style={[styles.selectedBadge, { backgroundColor: category.color }]}>
-                    <Text style={styles.selectedBadgeText}>✓</Text>
-                  </View>
-                )}
+                <Text style={[styles.ratingText, { color: severityRating === rating ? '#FFFFFF' : colors.text }]}>
+                  {rating}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Location */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Location</Text>
-          <TouchableOpacity style={[styles.locationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.locationDetails}>
-              <Text style={[styles.locationText, { color: colors.text }]}>{location}</Text>
-              <Text style={[styles.locationSubtext, { color: colors.textSecondary }]}>Tap to change location</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Description */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
           <TextInput
-            style={[styles.textArea, { backgroundColor: colors.surfaceVariant, color: colors.text, borderColor: colors.border }]}
+            style={[
+              styles.textArea,
+              { backgroundColor: colors.surfaceVariant, color: colors.text, borderColor: colors.border },
+            ]}
             placeholder="Describe what happened in detail..."
             placeholderTextColor={colors.textSecondary}
             value={description}
@@ -139,18 +238,17 @@ export default function ReportsScreen() {
           <Text style={[styles.charCount, { color: colors.textSecondary }]}>{description.length}/500</Text>
         </View>
 
-        {/* Photo Upload */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Add Photos (Optional)</Text>
           <View style={styles.photoContainer}>
             {photos.map((photo, index) => (
-              <View key={index} style={styles.photoItem}>
+              <View key={photo} style={styles.photoItem}>
                 <Image source={{ uri: photo }} style={styles.photoImage} />
                 <TouchableOpacity
                   style={[styles.photoRemove, { backgroundColor: colors.textSecondary }]}
-                  onPress={() => setPhotos(photos.filter((_, i) => i !== index))}
+                  onPress={() => setPhotos(photos.filter((_, itemIndex) => itemIndex !== index))}
                 >
-                  <Text style={styles.photoRemoveText}>✕</Text>
+                  <Text style={styles.photoRemoveText}>x</Text>
                 </TouchableOpacity>
               </View>
             ))}
@@ -166,7 +264,6 @@ export default function ReportsScreen() {
           <Text style={[styles.photoHint, { color: colors.textSecondary }]}>You can add up to 4 photos</Text>
         </View>
 
-        {/* Anonymous Toggle */}
         <View style={styles.section}>
           <View style={[styles.anonymousCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.anonymousLeft}>
@@ -181,20 +278,22 @@ export default function ReportsScreen() {
               value={isAnonymous}
               onValueChange={setIsAnonymous}
               trackColor={{ false: colors.border, true: '#5B8DEE' }}
-              thumbColor={isAnonymous ? '#FFFFFF' : '#FFFFFF'}
+              thumbColor="#FFFFFF"
             />
           </View>
         </View>
 
-        {/* Submit Button */}
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Submit Report</Text>
+        <TouchableOpacity
+          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+          onPress={handleSubmit}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.submitButtonText}>{isSubmitting ? 'Submitting...' : 'Submit Report'}</Text>
         </TouchableOpacity>
 
-        {/* Help Text */}
         <Text style={[styles.helpText, { color: colors.textSecondary }]}>
-          Reports are reviewed by our team and shared with local authorities when necessary.
-          False reports may result in account suspension.
+          Reports are reviewed by our team and shared with local authorities when necessary. False reports may result
+          in account suspension.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -275,15 +374,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 20,
+    minWidth: 24,
     height: 20,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 4,
   },
   selectedBadgeText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '400',
   },
   locationCard: {
@@ -301,6 +401,22 @@ const styles = StyleSheet.create({
   },
   locationSubtext: {
     fontSize: 13,
+    fontWeight: '400',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  ratingButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ratingText: {
+    fontSize: 15,
     fontWeight: '400',
   },
   textArea: {
@@ -396,6 +512,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 16,
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
   },
   submitButtonText: {
     fontSize: 15,

@@ -1,17 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { Button, Input } from '../../components/ui';
 import { colors, typography, spacing } from '../../theme';
+import { authService } from '../../services/api';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
 export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    navigation.navigate('OTPVerification', { email, flow: 'forgot-password' });
+  const handleSubmit = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      Alert.alert('Email Required', 'Please enter your email address.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await authService.forgotPassword(trimmedEmail);
+      navigation.navigate('OTPVerification', { email: trimmedEmail, flow: 'forgot-password' });
+    } catch (error: any) {
+      Alert.alert('Unable to Send Code', error?.response?.data?.detail || 'Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -36,6 +52,8 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
             title="Send Code"
             onPress={handleSubmit}
             fullWidth
+            loading={isSubmitting}
+            disabled={isSubmitting}
             style={{ marginTop: spacing.lg }}
           />
         </View>
