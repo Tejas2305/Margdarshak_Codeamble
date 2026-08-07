@@ -12,10 +12,7 @@ from app.schemas.user import (
     SendOTPRequest,
     VerifyOTPRequest,
 )
-from app.utils.email_verification import (
-    send_email_otp,
-    verify_email_otp
-)
+
 from app.utils.auth import get_current_user
 from app.models.user import User
 from app.utils.auth import get_current_user
