@@ -5,7 +5,10 @@ from jose import JWTError, jwt
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
-
+from app.schemas.password_reset import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+)
 from app.config import ALGORITHM, REFRESH_TOKEN_EXPIRE_DAYS, SECRET_KEY
 from app.database import get_db
 from app.models.refresh_token import RefreshToken

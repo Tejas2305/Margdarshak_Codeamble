@@ -6,7 +6,7 @@ from app.models.fir import FIR
 from app.models.area import Area
 from app.models.road_segment import RoadSegment
 from app.models.report import Report, ReportVote
-
+from app.models.password_reset_otp import PasswordResetOTP
 __all__ = [
     "User",
     "RefreshToken",

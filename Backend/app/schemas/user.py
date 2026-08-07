@@ -44,3 +44,6 @@ class SendOTPRequest(BaseModel):
 class VerifyOTPRequest(BaseModel):
     phone_number: str
     otp: str
+
+class VerifyEmailOTPRequest(BaseModel):
+    otp: str
