@@ -68,7 +68,7 @@
 | POST /auth/verify-email-otp | Done | Tanishka|
 | POST /auth/send-phone-otp | Done |Tanishka |
 | POST /auth/verify-phone-otp | Done | Tanishka |
-| POST /auth/forgot-password | Pending | |
+| POST /auth/forgot-password | Done | Tanishka |
 | Google OAuth Login | Pending | |  
 
 **0 / 5 done**
