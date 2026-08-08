@@ -90,6 +90,19 @@ export interface ChangePasswordResponse {
   message: string;
 }
 
+export interface SendOTPRequest {
+  phone_number: string;
+}
+
+export interface VerifyOTPRequest {
+  phone_number: string;
+  otp: string;
+}
+
+export interface VerifyEmailOTPRequest {
+  otp: string;
+}
+
 // Emergency Contact Types
 export interface EmergencyContact {
   contact_id: number;
@@ -105,7 +118,7 @@ export interface EmergencyContactCreate {
 export interface EmergencyContactUpdate {
   contact_id: number;
   name?: string;
-  phone_number?: string;
+  phone_number: string;
 }
 
 export interface EmergencyContactResponse {
@@ -153,6 +166,10 @@ export interface VoteResponse {
   downvotes: number;
   confidence_score: number;
   message: string;
+}
+
+export interface VoteRequest {
+  vote_type: number;
 }
 
 // Map Types
@@ -220,6 +237,11 @@ export interface SosHistoryItem {
 
 export interface MessageResponse {
   message: string;
+}
+
+export interface RootResponse {
+  message?: string;
+  [key: string]: unknown;
 }
 
 // Generic API Response

@@ -19,15 +19,17 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRegister = async () => {
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
+    const trimmedPhone = phoneNumber.trim();
 
-    if (!trimmedName || !trimmedEmail || !password) {
-      Alert.alert('Missing Details', 'Please enter your name, email, and password.');
+    if (!trimmedName || !trimmedEmail || !trimmedPhone || !password) {
+      Alert.alert('Missing Details', 'Please enter your name, email, phone number, and password.');
       return;
     }
 
@@ -35,18 +37,40 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
 
     try {
       setIsSubmitting(true);
-      await authService.register({
+      
+      const registerData = {
         first_name: firstName,
         last_name: lastNameParts.join(' ') || firstName,
         email: trimmedEmail,
+        phone_number: trimmedPhone,
         password,
-      });
+      };
+      
+      console.log('🔵 Attempting registration with:', { ...registerData, password: '***' });
+      
+      const response = await authService.register(registerData);
+      
+      console.log('✅ Registration successful:', response);
 
       Alert.alert('Account Created', 'Please log in with your new account.', [
         { text: 'OK', onPress: () => navigation.navigate('Login') },
       ]);
     } catch (error: any) {
-      Alert.alert('Registration Failed', error?.response?.data?.detail || 'Unable to create your account right now.');
+      console.error('❌ Registration error:', error);
+      console.error('❌ Error response:', error?.response?.data);
+      console.error('❌ Error message:', error?.message);
+      
+      let errorMessage = 'Unable to create your account right now.';
+      
+      if (error?.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.request) {
+        errorMessage = 'Cannot connect to server. Please check your internet connection and make sure backend is running.';
+      }
+      
+      Alert.alert('Registration Failed', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -96,6 +120,14 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
             onChangeText={setEmail}
             placeholder="Enter your email"
             keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <Input
+            label="Phone Number"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            placeholder="+1234567890"
+            keyboardType="phone-pad"
             autoCapitalize="none"
           />
           <PasswordInput

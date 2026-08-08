@@ -6,6 +6,7 @@
  */
 
 import { authService, userService, emergencyContactService, reportService } from './index';
+import { BASE_URL } from './client';
 
 // Test data
 const testUser = {
@@ -21,7 +22,7 @@ const testUser = {
  */
 export async function testBackendHealth() {
   try {
-    const response = await fetch(`${process.env.API_BASE_URL || 'http://localhost:8000'}/`);
+    const response = await fetch(`${BASE_URL}/`);
     const data = await response.json();
     console.log('✅ Backend Health Check:', data);
     return { success: true, data };

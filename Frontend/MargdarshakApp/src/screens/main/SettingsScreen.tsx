@@ -373,7 +373,10 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Emergency Contacts */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Emergency Contacts</Text>
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <TouchableOpacity 
+            style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('EmergencyContacts')}
+          >
             <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
               <MaterialCommunityIcons name="account-group" size={20} color={colors.primary} />
             </View>

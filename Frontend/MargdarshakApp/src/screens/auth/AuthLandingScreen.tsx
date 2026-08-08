@@ -51,21 +51,6 @@ export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.primaryButtonText}>Sign Up with Email</Text>
           </TouchableOpacity>
 
-          <View style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textSecondary }]}>or</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
-
-          <View style={styles.socialButtons}>
-            <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
-              <MaterialCommunityIcons name="google" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
-              <MaterialCommunityIcons name="apple" size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-
           <View style={styles.loginPrompt}>
             <Text style={[styles.loginText, { color: colors.textSecondary }]}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
@@ -138,40 +123,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '400',
     color: '#FFFFFF',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    fontSize: 14,
-    fontWeight: '400',
-    paddingHorizontal: 16,
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginBottom: 32,
-  },
-  socialButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   loginPrompt: {
     flexDirection: 'row',

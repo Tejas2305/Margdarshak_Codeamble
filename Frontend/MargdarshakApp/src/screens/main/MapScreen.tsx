@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -122,7 +123,7 @@ export default function MapScreen({ navigation }: any) {
           onPress={() => navigation.navigate('Search')}
           activeOpacity={0.8}
         >
-          <Text style={[styles.searchIcon, { color: colors.textSecondary }]}>Search</Text>
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.textSecondary} />
           <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>Search destination</Text>
         </TouchableOpacity>
 
@@ -130,7 +131,7 @@ export default function MapScreen({ navigation }: any) {
           style={[styles.iconButton, { backgroundColor: colors.surface }]}
           onPress={() => navigation.navigate('Settings')}
         >
-          <Text style={[styles.iconText, { color: colors.textSecondary }]}>Set</Text>
+          <MaterialCommunityIcons name="cog-outline" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -248,12 +249,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  searchIcon: {
-    fontSize: 12,
-    marginRight: 12,
-  },
   searchPlaceholder: {
     fontSize: 14,
+    marginLeft: 12,
   },
   iconButton: {
     width: 48,
@@ -266,9 +264,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
-  },
-  iconText: {
-    fontSize: 12,
   },
   emergencyButton: {
     position: 'absolute',

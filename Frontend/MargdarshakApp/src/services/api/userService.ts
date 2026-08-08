@@ -5,6 +5,9 @@ import {
   UpdateProfileResponse,
   ChangePasswordRequest,
   ChangePasswordResponse,
+  SendOTPRequest,
+  VerifyOTPRequest,
+  VerifyEmailOTPRequest,
   MessageResponse,
 } from './types';
 
@@ -45,17 +48,18 @@ class UserService {
   }
 
   async sendPhoneOTP(phoneNumber: string): Promise<MessageResponse> {
-    const response = await apiClient.post<MessageResponse>('/users/send-phone-otp', {
-      phone_number: phoneNumber,
-    });
+    const payload: SendOTPRequest = { phone_number: phoneNumber };
+    const response = await apiClient.post<MessageResponse>('/users/send-phone-otp', payload);
     return response.data;
   }
 
   async verifyPhoneOTP(phoneNumber: string, otp: string): Promise<MessageResponse> {
-    const response = await apiClient.post<MessageResponse>('/users/verify-phone-otp', {
+    const payload: VerifyOTPRequest = {
       phone_number: phoneNumber,
       otp,
-    });
+    };
+
+    const response = await apiClient.post<MessageResponse>('/users/verify-phone-otp', payload);
     return response.data;
   }
 
@@ -65,7 +69,8 @@ class UserService {
   }
 
   async verifyEmailOTP(otp: string): Promise<MessageResponse> {
-    const response = await apiClient.post<MessageResponse>('/users/verify-email-otp', { otp });
+    const payload: VerifyEmailOTPRequest = { otp };
+    const response = await apiClient.post<MessageResponse>('/users/verify-email-otp', payload);
     return response.data;
   }
 }

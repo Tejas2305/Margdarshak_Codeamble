@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Category, Report, ReportCreate, VoteResponse } from './types';
+import { Category, Report, ReportCreate, VoteRequest, VoteResponse } from './types';
 
 class ReportService {
   /**
@@ -30,9 +30,8 @@ class ReportService {
   }
 
   async voteReport(reportId: number, voteType: 1 | -1): Promise<VoteResponse> {
-    const response = await apiClient.post<VoteResponse>(`/reports/${reportId}/vote`, {
-      vote_type: voteType,
-    });
+    const payload: VoteRequest = { vote_type: voteType };
+    const response = await apiClient.post<VoteResponse>(`/reports/${reportId}/vote`, payload);
     return response.data;
   }
 }

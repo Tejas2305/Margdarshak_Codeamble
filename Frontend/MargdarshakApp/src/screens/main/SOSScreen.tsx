@@ -34,6 +34,7 @@ export default function SOSScreen() {
   const [isSending, setIsSending] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const hasTriggeredRef = useRef(false);
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -59,12 +60,16 @@ export default function SOSScreen() {
     let timer: ReturnType<typeof setTimeout>;
     if (isActivated && countdown > 0) {
       timer = setTimeout(() => setCountdown((value) => value - 1), 1000);
-    } else if (isActivated && countdown === 0 && !isSending) {
+    } else if (isActivated && countdown === 0 && !isSending && !hasTriggeredRef.current) {
+      // Mark as triggered and call function
+      hasTriggeredRef.current = true;
       triggerEmergency();
     }
 
-    return () => clearTimeout(timer);
-  }, [isActivated, countdown, isSending]);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isActivated, countdown]);
 
   const handleSOSPress = () => {
     Alert.alert('Activate Emergency Alert?', 'This will notify your emergency contacts.', [
@@ -75,6 +80,7 @@ export default function SOSScreen() {
         onPress: () => {
           setIsActivated(true);
           setCountdown(5);
+          hasTriggeredRef.current = false; // Reset trigger flag
         },
       },
     ]);
@@ -83,6 +89,7 @@ export default function SOSScreen() {
   const cancelSOS = () => {
     setIsActivated(false);
     setCountdown(5);
+    hasTriggeredRef.current = false; // Reset trigger flag
   };
 
   const resolveLocation = async () => {
@@ -115,6 +122,7 @@ export default function SOSScreen() {
           onPress: () => {
             setIsActivated(false);
             setCountdown(5);
+            hasTriggeredRef.current = false; // Reset trigger flag
           },
         },
       ]);
@@ -122,6 +130,7 @@ export default function SOSScreen() {
       Alert.alert('SOS Failed', error?.response?.data?.detail || 'Unable to send SOS right now.');
       setIsActivated(false);
       setCountdown(5);
+      hasTriggeredRef.current = false; // Reset trigger flag
     } finally {
       setIsSending(false);
     }
