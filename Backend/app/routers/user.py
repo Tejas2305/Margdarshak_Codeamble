@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +21,7 @@ from app.schemas.user import (
 from sqlalchemy import delete, select
 from app.utils.auth import get_current_user
 from app.utils.password import verify_password, hash_password
-
+from app.utils.cloudinary_service import upload_profile_picture
 from app.utils.email_service import (
     generate_otp,
     send_email_otp,
@@ -288,4 +288,49 @@ async def verify_email_otp(
 
     return {
         "message": "Email verified successfully"
+    }
+
+@router.put("/me/profile-picture")
+async def update_profile_picture(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check file type
+    allowed_types = {
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    }
+
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Only JPG, PNG, and WEBP images are allowed"
+        )
+
+    # Read file
+    contents = await file.read()
+
+    # Check file size - 5 MB
+    max_size = 5 * 1024 * 1024
+
+    if len(contents) > max_size:
+        raise HTTPException(
+            status_code=400,
+            detail="Profile picture must be less than 5 MB"
+        )
+
+    # Upload to Cloudinary
+    image_url = upload_profile_picture(contents)
+
+    # Save Cloudinary URL in database
+    current_user.profile_picture = image_url
+
+    await db.commit()
+    await db.refresh(current_user)
+
+    return {
+        "message": "Profile picture updated successfully",
+        "profile_picture": current_user.profile_picture
     }
