@@ -1,5 +1,6 @@
 import httpx
 import math
+import psycopg2
 from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, text
@@ -7,7 +8,8 @@ from sqlalchemy import select, func, text
 from app.models.road_segment import RoadSegment
 from app.models.area import Area
 from app.models.fir import FIR
-from app.schemas.map import LocationPoint, RouteSafetyOption, RouteSafetyResponse
+from app.models.report import Report
+from app.schemas.map import LocationPoint, RouteSafetyOption, RouteSafetyResponse, WarningItem
 from app.services.scoring_service import (
     calculate_community_score_b,
     calculate_government_score_a,
@@ -37,7 +39,6 @@ PUNE_AREA_CENTROIDS = {
     "Nigdi": (18.6480, 73.7699),
 }
 
-
 def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     R = 6371.0
     dlat = math.radians(lat2 - lat1)
@@ -55,6 +56,56 @@ async def seed_areas_if_empty(db: AsyncSession):
             area = Area(name=name, latitude=lat, longitude=lng)
             db.add(area)
         await db.commit()
+
+
+async def search_places(query: str) -> List[Dict[str, Any]]:
+    search_text = (query or "").strip()
+    if not search_text:
+        return []
+
+    try:
+        conn = psycopg2.connect(
+            dbname="osrm",
+            user="postgres",
+            password="tejas",
+            host="localhost",
+            port=5432,
+        )
+        cur = conn.cursor()
+        pattern = f"%{search_text}%"
+
+        cur.execute(
+            """
+            SELECT name, ST_Y(ST_Centroid(way)) AS lat, ST_X(ST_Centroid(way)) AS lng
+            FROM (
+                SELECT name, way FROM planet_osm_point
+                UNION ALL
+                SELECT name, way FROM planet_osm_polygon
+                UNION ALL
+                SELECT name, way FROM planet_osm_line
+            ) AS places
+            WHERE name ILIKE %s
+            ORDER BY name
+            LIMIT 5
+            """,
+            (pattern,),
+        )
+
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        results = []
+        for name, lat, lng in rows:
+            if name:
+                results.append({
+                    "name": name,
+                    "lat": float(lat),
+                    "lng": float(lng),
+                })
+        return results
+    except Exception:
+        return []
 
 
 async def find_nearest_road_segment(db: AsyncSession, lat: float, lng: float) -> Optional[RoadSegment]:
@@ -178,7 +229,7 @@ async def evaluate_osrm_routes(origin: LocationPoint, destination: LocationPoint
             average_risk_score=24.5,
             safety_index=75.5,
             is_safest=True,
-            warnings=["Standard route computed. Drive safely."],
+            warnings=[],
             geometry={
                 "type": "LineString",
                 "coordinates": [
@@ -209,11 +260,28 @@ async def evaluate_osrm_routes(origin: LocationPoint, destination: LocationPoint
         adjusted_dur = dur * (1.0 + (route_risk / 100.0) * 0.4)
         safety_index = round(100.0 - route_risk, 1)
 
-        warnings = []
-        if route_risk > 50.0:
-            warnings.append("High crime report density detected on this route.")
-        if route_risk > 35.0:
-            warnings.append("Reduced lighting/visibility area along segment.")
+        warnings: List[WarningItem] = []
+        if seg:
+            reports_result = await db.execute(
+                select(Report).where(
+                    Report.road_segment_id == seg.segment_id,
+                    Report.status != "REJECTED"
+                )
+            )
+            reports = reports_result.scalars().all()
+            for report in reports:
+                if getattr(report, "computed_severity", 0.0) >= 70.0:
+                    message = getattr(report, "description", None)
+                    if not message:
+                        continue
+                    warnings.append(
+                        WarningItem(
+                            latitude=float(getattr(report, "latitude", 0.0) or 0.0),
+                            longitude=float(getattr(report, "longitude", 0.0) or 0.0),
+                            message=message,
+                            severity=int(getattr(report, "computed_severity", 0) or 0),
+                        )
+                    )
 
         if route_risk < lowest_risk:
             lowest_risk = route_risk
