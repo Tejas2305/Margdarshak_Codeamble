@@ -20,7 +20,6 @@
         "backgroundColor": "#0A0E27",
         "foregroundImage": "./assets/icon.png"
       },
-      "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.MargdarshakApp"
     },
     "web": {
@@ -36,7 +35,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#0A0E27"
         }
-      ]
+      ],
+      "expo-asset"
     ]
   }
 }
