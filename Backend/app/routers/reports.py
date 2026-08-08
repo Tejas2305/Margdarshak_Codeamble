@@ -1,4 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    UploadFile,
+    File,
+    Form,
+)
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -7,20 +16,24 @@ from app.models.category import Category
 from app.models.user import User
 from app.models.report import Report, ReportVote
 from app.models.road_segment import RoadSegment
+
 from app.schemas.report import (
-    ReportCreate,
     ReportResponse,
     VoteRequest,
     VoteResponse,
 )
+
 from app.utils.auth import get_current_user
+
 from app.services.scoring_service import (
     calculate_computed_severity,
     calculate_report_confidence,
 )
+
 from app.services.spatial_service import find_nearest_road_segment
 from app.services.dirty_segment_service import recalculate_dirty_segments
 from app.services.osrm_updater_service import trigger_debounced_osrm_update
+from app.utils.cloudinary import upload_incident_image
 
 router = APIRouter(
     prefix="/reports",
@@ -76,49 +89,142 @@ async def get_categories(
 
 @router.post("/create", response_model=ReportResponse, status_code=201)
 async def create_report(
-    request: ReportCreate,
+    category_id: int = Form(...),
+    user_rating: int = Form(...),
+    description: str | None = Form(None),
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    incident_image: UploadFile | None = File(None),
+
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
+    # -----------------------------------
+    # 1. Check category
+    # -----------------------------------
+
     cat_result = await db.execute(
-        select(Category).where(Category.category_id == request.category_id)
+        select(Category).where(
+            Category.category_id == category_id
+        )
     )
+
     category = cat_result.scalar_one_or_none()
 
     if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Category not found"
+        )
 
-    s_min = getattr(category, "severity_min", 50.0)
-    s_max = getattr(category, "severity_max", 70.0)
-    computed_sev = calculate_computed_severity(s_min, s_max, request.user_rating)
+    image_path = None
 
-    nearest_seg = await find_nearest_road_segment(db, request.latitude, request.longitude)
-    seg_id = nearest_seg.segment_id if nearest_seg else None
+    if incident_image:
+
+        allowed_types = {
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        }
+
+        if incident_image.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail="Only JPG, PNG and WEBP images are allowed"
+            )
+
+        # 5 MB maximum
+        max_size = 5 * 1024 * 1024
+
+        image_data = await incident_image.read()
+
+        if len(image_data) > max_size:
+            raise HTTPException(
+                status_code=400,
+                detail="Image size must be less than 5 MB"
+            )
+
+        # Upload to Cloudinary and store the secure URL in the database.
+        image_path = upload_incident_image(image_data)
+
+    # -----------------------------------
+    # 6. Calculate severity
+    # -----------------------------------
+
+    s_min = getattr(
+        category,
+        "severity_min",
+        50.0
+    )
+
+    s_max = getattr(
+        category,
+        "severity_max",
+        70.0
+    )
+
+    computed_sev = calculate_computed_severity(
+        s_min,
+        s_max,
+        user_rating
+    )
+
+    # -----------------------------------
+    # 7. Find nearest road segment
+    # -----------------------------------
+
+    nearest_seg = await find_nearest_road_segment(
+        db,
+        latitude,
+        longitude
+    )
+
+    seg_id = (
+        nearest_seg.segment_id
+        if nearest_seg
+        else None
+    )
 
     if nearest_seg:
         nearest_seg.is_dirty = True
 
+    # -----------------------------------
+    # 8. Create report
+    # -----------------------------------
+
     new_report = Report(
         user_id=current_user.user_id,
-        category_id=request.category_id,
+        category_id=category_id,
         road_segment_id=seg_id,
-        user_rating=request.user_rating,
+        user_rating=user_rating,
         computed_severity=computed_sev,
-        description=request.description,
-        latitude=request.latitude,
-        longitude=request.longitude,
+        description=description,
+        latitude=latitude,
+        longitude=longitude,
         status="PENDING",
         upvotes=0,
         downvotes=0,
-        confidence_score=0.5
+        confidence_score=0.5,
+        incident_image=image_path
     )
 
     db.add(new_report)
+
     await db.commit()
+
     await db.refresh(new_report)
 
+    # -----------------------------------
+    # 9. Recalculate road segment
+    # -----------------------------------
+
     await recalculate_dirty_segments(db)
+
     await trigger_debounced_osrm_update()
+
+    # -----------------------------------
+    # 10. Return response
+    # -----------------------------------
 
     return ReportResponse(
         report_id=new_report.report_id,
@@ -134,6 +240,7 @@ async def create_report(
         upvotes=new_report.upvotes,
         downvotes=new_report.downvotes,
         confidence_score=new_report.confidence_score,
+        incident_image=new_report.incident_image,
         created_at=new_report.created_at
     )
 
