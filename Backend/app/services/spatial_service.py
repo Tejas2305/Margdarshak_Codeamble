@@ -1,5 +1,6 @@
 import httpx
 import math
+import psycopg2
 from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, text
@@ -38,7 +39,6 @@ PUNE_AREA_CENTROIDS = {
     "Nigdi": (18.6480, 73.7699),
 }
 
-
 def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     R = 6371.0
     dlat = math.radians(lat2 - lat1)
@@ -56,6 +56,56 @@ async def seed_areas_if_empty(db: AsyncSession):
             area = Area(name=name, latitude=lat, longitude=lng)
             db.add(area)
         await db.commit()
+
+
+async def search_places(query: str) -> List[Dict[str, Any]]:
+    search_text = (query or "").strip()
+    if not search_text:
+        return []
+
+    try:
+        conn = psycopg2.connect(
+            dbname="osrm",
+            user="postgres",
+            password="tejas",
+            host="localhost",
+            port=5432,
+        )
+        cur = conn.cursor()
+        pattern = f"%{search_text}%"
+
+        cur.execute(
+            """
+            SELECT name, ST_Y(ST_Centroid(way)) AS lat, ST_X(ST_Centroid(way)) AS lng
+            FROM (
+                SELECT name, way FROM planet_osm_point
+                UNION ALL
+                SELECT name, way FROM planet_osm_polygon
+                UNION ALL
+                SELECT name, way FROM planet_osm_line
+            ) AS places
+            WHERE name ILIKE %s
+            ORDER BY name
+            LIMIT 5
+            """,
+            (pattern,),
+        )
+
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        results = []
+        for name, lat, lng in rows:
+            if name:
+                results.append({
+                    "name": name,
+                    "lat": float(lat),
+                    "lng": float(lng),
+                })
+        return results
+    except Exception:
+        return []
 
 
 async def find_nearest_road_segment(db: AsyncSession, lat: float, lng: float) -> Optional[RoadSegment]:

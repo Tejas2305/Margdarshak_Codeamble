@@ -27,6 +27,17 @@ class WarningItem(BaseModel):
     severity: int
 
 
+class SearchResultItem(BaseModel):
+    name: str
+    lat: float
+    lng: float
+
+
+class SearchResponse(BaseModel):
+    query: str
+    results: List[SearchResultItem]
+
+
 class RouteSafetyOption(BaseModel):
     route_index: int
     distance_meters: float
