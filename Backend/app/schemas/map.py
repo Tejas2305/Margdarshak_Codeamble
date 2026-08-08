@@ -21,10 +21,10 @@ class RouteSafetyRequest(BaseModel):
 
 
 class WarningItem(BaseModel):
-    latitude: float
-    longitude: float
     message: str
     severity: int
+    latitude: float
+    longitude: float
 
 
 class SearchResultItem(BaseModel):
