@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useRoutePlanning } from '../../contexts/RoutePlanningContext';
 import { getThemeColors } from '../../theme';
 import { mapService } from '../../services/api';
 import { PlaceResult } from '../../services/api/types';
@@ -19,6 +20,7 @@ import { PlaceResult } from '../../services/api/types';
 export default function SearchScreen({ navigation, route }: any) {
   const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
+  const { setFromPlace, setToPlace } = useRoutePlanning();
   const searchType = route?.params?.searchType || 'to'; // 'from' or 'to'
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,18 +57,28 @@ export default function SearchScreen({ navigation, route }: any) {
   };
 
   const handleSelectPlace = (place: PlaceResult) => {
-    // Navigate back to Map tab, passing the selected place
+    // Update context directly
+    const selectedPlace = {
+      name: place.name.split(',')[0],
+      fullName: place.name,
+      lat: place.lat,
+      lng: place.lng,
+    };
+
+    console.log('🎯 SearchScreen: Setting place in context', {
+      type: searchType,
+      place: selectedPlace.name,
+    });
+
+    if (searchType === 'from') {
+      setFromPlace(selectedPlace);
+    } else {
+      setToPlace(selectedPlace);
+    }
+
+    // Navigate back to Map
     navigation.navigate('MainTabs', {
       screen: 'Map',
-      params: {
-        selectedPlace: {
-          name: place.name.split(',')[0],
-          fullName: place.name,
-          lat: place.lat,
-          lng: place.lng,
-        },
-        searchType,
-      },
     });
   };
 

@@ -11,11 +11,12 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useRoutePlanning } from '../../contexts/RoutePlanningContext';
 import { getThemeColors } from '../../theme';
 import { mapService } from '../../services/api';
+import OpenStreetMapView from '../../components/OpenStreetMapView';
 import { 
   SpeedLimitResponse, 
   Report,
@@ -68,15 +69,11 @@ const getSeverityColor = (severity: number): string => {
 export default function MapScreen({ navigation, route }: any) {
   const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
-  const mapRef = useRef<MapView>(null);
-
-  // Use refs to persist values across renders
-  const fromPlaceRef = useRef<SelectedPlace | null>(null);
-  const toPlaceRef = useRef<SelectedPlace | null>(null);
+  
+  // Use context for places - this persists across navigation
+  const { fromPlace, toPlace, setFromPlace, setToPlace, clearRoute: clearRoutePlaces } = useRoutePlanning();
 
   // Route planning state
-  const [fromPlace, setFromPlace] = useState<SelectedPlace | null>(null);
-  const [toPlace, setToPlace] = useState<SelectedPlace | null>(null);
   const [appState, setAppState] = useState<AppState>('idle');
   const [routeResponse, setRouteResponse] = useState<RouteSafetyResponse | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<RouteSafetyOption | null>(null);
@@ -92,58 +89,9 @@ export default function MapScreen({ navigation, route }: any) {
   // Nearby reports (mock for now)
   const [nearbyReports, setNearbyReports] = useState<Report[]>([]);
 
-  // Handle search results coming back - FIXED with immediate restore
+  // Log when places change from context
   useEffect(() => {
-    const params = route?.params;
-    if (!params?.selectedPlace) return;
-    
-    const place: SelectedPlace = params.selectedPlace;
-    const searchType: string = params.searchType;
-    
-    console.log('📍 Received params:', { place: place.name, searchType });
-    console.log('📦 Current refs:', { 
-      fromRef: fromPlaceRef.current?.name || 'NULL', 
-      toRef: toPlaceRef.current?.name || 'NULL' 
-    });
-    
-    // Store in refs AND update state immediately for the specific field
-    if (searchType === 'from') {
-      console.log('✅ Setting FROM place:', place.name);
-      fromPlaceRef.current = place;
-      setFromPlace(place);
-      // Keep toPlace as is
-      if (toPlaceRef.current) {
-        setToPlace(toPlaceRef.current);
-      }
-    } else if (searchType === 'to') {
-      console.log('✅ Setting TO place:', place.name);
-      toPlaceRef.current = place;
-      setToPlace(place);
-      // Keep fromPlace as is
-      if (fromPlaceRef.current) {
-        setFromPlace(fromPlaceRef.current);
-      }
-    }
-    
-    console.log('✅ Updated both states:', {
-      from: fromPlaceRef.current?.name || 'NULL',
-      to: toPlaceRef.current?.name || 'NULL'
-    });
-  }, [route?.params?.selectedPlace, route?.params?.searchType]);
-
-  // Clear params only after state is set
-  useEffect(() => {
-    if (route?.params?.selectedPlace) {
-      const timer = setTimeout(() => {
-        navigation.setParams({ selectedPlace: undefined, searchType: undefined });
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [route?.params?.selectedPlace]);
-
-  // Log when places change
-  useEffect(() => {
-    console.log('🔄 Places state:', { 
+    console.log('🔄 Places from context:', { 
       from: fromPlace?.name || 'NOT SET', 
       to: toPlace?.name || 'NOT SET' 
     });
@@ -164,25 +112,6 @@ export default function MapScreen({ navigation, route }: any) {
       });
     }
   }, [fromPlace, toPlace, appState]);
-
-  // Fly to marker when placed
-  useEffect(() => {
-    if (fromPlace && !toPlace) {
-      mapRef.current?.animateToRegion({
-        latitude: fromPlace.lat,
-        longitude: fromPlace.lng,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      }, 600);
-    } else if (toPlace && !fromPlace) {
-      mapRef.current?.animateToRegion({
-        latitude: toPlace.lat,
-        longitude: toPlace.lng,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      }, 600);
-    }
-  }, [fromPlace, toPlace]);
 
   // Load default speed data for Pune center
   useEffect(() => {
@@ -238,18 +167,7 @@ export default function MapScreen({ navigation, route }: any) {
       setSelectedRoute(safest);
       setAppState('route_displayed');
       
-      // Fit to route
-      if (safest.geometry) {
-        const coords = (safest.geometry as any)?.coordinates as number[][] | undefined;
-        if (coords && coords.length >= 2) {
-          console.log('🗺️ Fitting map to route with', coords.length, 'coordinates');
-          const coordinates = coords.map(c => ({ latitude: c[1], longitude: c[0] }));
-          mapRef.current?.fitToCoordinates(coordinates, {
-            edgePadding: { top: 150, right: 50, bottom: 350, left: 50 },
-            animated: true,
-          });
-        }
-      }
+      console.log('✅ Route ready to display');
     } catch (error: any) {
       console.error('❌ API Error:', error);
       console.error('   Status:', error?.response?.status);
@@ -264,14 +182,10 @@ export default function MapScreen({ navigation, route }: any) {
 
   // Clear route
   const handleClearRoute = () => {
-    fromPlaceRef.current = null;
-    toPlaceRef.current = null;
-    setFromPlace(null);
-    setToPlace(null);
+    clearRoutePlaces();  // Clear from context
     setAppState('idle');
     setRouteResponse(null);
     setSelectedRoute(null);
-    mapRef.current?.animateToRegion(PUNE_CENTER, 600);
   };
 
   // Route coordinates for Polyline
@@ -281,6 +195,25 @@ export default function MapScreen({ navigation, route }: any) {
         longitude: c[0],
       }))
     : [];
+
+  // Log route coordinates for debugging
+  useEffect(() => {
+    if (selectedRoute) {
+      console.log('🗺️ Route selected:', {
+        hasGeometry: !!selectedRoute.geometry,
+        geometryType: selectedRoute.geometry ? (selectedRoute.geometry as any).type : 'none',
+        coordinatesCount: routeCoordinates.length,
+        firstCoord: routeCoordinates[0],
+        lastCoord: routeCoordinates[routeCoordinates.length - 1],
+      });
+      
+      if (routeCoordinates.length === 0) {
+        console.log('⚠️ NO ROUTE COORDINATES! Geometry:', JSON.stringify(selectedRoute.geometry));
+      } else {
+        console.log('✅ Route coordinates ready:', routeCoordinates.length, 'points');
+      }
+    }
+  }, [selectedRoute, routeCoordinates.length]);
 
   // Pan responder for bottom sheet drag
   const panResponder = useRef(
@@ -346,70 +279,16 @@ export default function MapScreen({ navigation, route }: any) {
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* ======== MAP ======== */}
-      <MapView
-        ref={mapRef}
-        provider={PROVIDER_DEFAULT}
-        style={styles.map}
-        initialRegion={PUNE_CENTER}
-        showsUserLocation={true}
-        showsMyLocationButton={false}
-        showsCompass={true}
-        onRegionChangeComplete={(region) => {
-          if (appState === 'idle') {
-            loadSpeedData(region.latitude, region.longitude);
-          }
+      <OpenStreetMapView
+        coordinates={routeCoordinates}
+        fromPlace={fromPlace}
+        toPlace={toPlace}
+        warnings={selectedRoute?.warnings}
+        routeColor={getSafetyColor(selectedRoute?.safety_index || 50)}
+        onMapReady={() => {
+          console.log('🗺️ OpenStreetMap is ready!');
         }}
-      >
-        {/* Route Line */}
-        {routeCoordinates.length > 0 && (
-          <Polyline
-            coordinates={routeCoordinates}
-            strokeColor={getSafetyColor(selectedRoute?.safety_index || 50)}
-            strokeWidth={5}
-            lineCap="round"
-            lineJoin="round"
-          />
-        )}
-
-        {/* FROM Marker */}
-        {fromPlace && (
-          <Marker
-            coordinate={{ latitude: fromPlace.lat, longitude: fromPlace.lng }}
-            title={fromPlace.name}
-            description="Starting point"
-          >
-            <View style={styles.fromMarkerContainer}>
-              <View style={styles.fromMarkerDot}>
-                <View style={styles.fromMarkerInner} />
-              </View>
-            </View>
-          </Marker>
-        )}
-
-        {/* TO Marker */}
-        {toPlace && (
-          <Marker
-            coordinate={{ latitude: toPlace.lat, longitude: toPlace.lng }}
-            title={toPlace.name}
-            description="Destination"
-            pinColor="#EA4335"
-          />
-        )}
-
-        {/* Warning Markers */}
-        {selectedRoute?.warnings && selectedRoute.warnings.map((warning, index) => (
-          <Marker
-            key={`warning-${index}`}
-            coordinate={{ latitude: warning.latitude, longitude: warning.longitude }}
-            title={warning.message}
-            description={`Severity: ${warning.severity}`}
-          >
-            <View style={[styles.warningMarker, { backgroundColor: getSeverityColor(warning.severity) }]}>
-              <Text style={styles.warningMarkerText}>!</Text>
-            </View>
-          </Marker>
-        ))}
-      </MapView>
+      />
 
       {/* ======== TOP: FROM/TO SEARCH BAR ======== */}
       <View style={[styles.searchContainer, { backgroundColor: colors.surface }]}>
@@ -430,10 +309,7 @@ export default function MapScreen({ navigation, route }: any) {
               {fromPlace?.name || 'Select starting point'}
             </Text>
             {fromPlace && (
-              <TouchableOpacity onPress={() => {
-                fromPlaceRef.current = null;
-                setFromPlace(null);
-              }}>
+              <TouchableOpacity onPress={() => setFromPlace(null)}>
                 <MaterialCommunityIcons name="close-circle" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
@@ -457,10 +333,7 @@ export default function MapScreen({ navigation, route }: any) {
               {toPlace?.name || 'Select destination'}
             </Text>
             {toPlace && (
-              <TouchableOpacity onPress={() => {
-                toPlaceRef.current = null;
-                setToPlace(null);
-              }}>
+              <TouchableOpacity onPress={() => setToPlace(null)}>
                 <MaterialCommunityIcons name="close-circle" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
