@@ -22,9 +22,6 @@ export default function SettingsScreen({ navigation }: any) {
   const colors = getThemeColors(isDark);
   
   const [notifications, setNotifications] = useState(true);
-  const [locationTracking, setLocationTracking] = useState(true);
-  const [nightMode, setNightMode] = useState(false);
-  const [autoAlert, setAutoAlert] = useState(false);
   const [shareData, setShareData] = useState(true);
   const [profile, setProfile] = useState<User | null>(null);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
@@ -308,66 +305,6 @@ export default function SettingsScreen({ navigation }: any) {
               thumbColor={notifications ? colors.primary : '#f4f3f4'}
             />
           </View>
-
-          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-                <MaterialCommunityIcons name="map-marker-radius" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, { color: colors.text }]}>Location Tracking</Text>
-                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                  Share location for safety monitoring
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={locationTracking}
-              onValueChange={setLocationTracking}
-              trackColor={{ false: colors.border, true: colors.primary + '60' }}
-              thumbColor={locationTracking ? colors.primary : '#f4f3f4'}
-            />
-          </View>
-
-          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-                <MaterialCommunityIcons name="moon-waning-crescent" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, { color: colors.text }]}>Night Mode Alerts</Text>
-                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                  Extra safety alerts after dark
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={nightMode}
-              onValueChange={setNightMode}
-              trackColor={{ false: colors.border, true: colors.primary + '60' }}
-              thumbColor={nightMode ? colors.primary : '#f4f3f4'}
-            />
-          </View>
-
-          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-                <MaterialCommunityIcons name="alert-octagon" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, { color: colors.text }]}>Auto Emergency Alert</Text>
-                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                  Auto-trigger SOS in dangerous areas
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={autoAlert}
-              onValueChange={setAutoAlert}
-              trackColor={{ false: colors.border, true: colors.primary + '60' }}
-              thumbColor={autoAlert ? colors.primary : '#f4f3f4'}
-            />
-          </View>
         </View>
 
         {/* Emergency Contacts */}
@@ -469,43 +406,6 @@ export default function SettingsScreen({ navigation }: any) {
             </View>
             <Text style={[styles.menuText, { color: colors.text }]}>Storage</Text>
             <Text style={[styles.menuValue, { color: colors.textSecondary }]}>128 MB</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* About */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="information-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>App Version</Text>
-            <Text style={[styles.menuValue, { color: colors.textSecondary }]}>1.0.0</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="star-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Rate Us</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="message-alert-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Send Feedback</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="help-circle-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Help & Support</Text>
             <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
           </TouchableOpacity>
         </View>

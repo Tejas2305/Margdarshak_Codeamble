@@ -135,13 +135,6 @@ export default function MapScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={[styles.emergencyButton, { top: insets.top + 72 }]}
-        onPress={() => navigation.navigate('SOS')}
-      >
-        <Text style={styles.emergencyIcon}>!</Text>
-      </TouchableOpacity>
-
       <View style={[styles.bottomSheet, { backgroundColor: colors.surface }]}>
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
@@ -264,27 +257,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
-  },
-  emergencyButton: {
-    position: 'absolute',
-    right: 16,
-    width: 56,
-    height: 56,
-    backgroundColor: '#EA4335',
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    zIndex: 10,
-  },
-  emergencyIcon: {
-    fontSize: 32,
-    fontWeight: '400',
-    color: '#FFFFFF',
   },
   bottomSheet: {
     position: 'absolute',

@@ -34,11 +34,13 @@ export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Image 
-            source={require('../../../assets/icon.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <View style={[styles.logoContainer, { backgroundColor: colors.surfaceVariant }]}>
+            <Image 
+              source={require('../../../assets/icon.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
           <Text style={[styles.title, { color: colors.text }]}>Margdarshak</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your safety companion on every journey</Text>
         </View>
@@ -88,18 +90,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
   },
-  logo: {
-    width: 180,
-    height: 180,
-    marginBottom: 24,
-  },
   logoContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 200,
+    height: 200,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
+    padding: 10,
+  },
+  logo: {
+    width: 180,
+    height: 180,
   },
   title: {
     fontSize: 32,
