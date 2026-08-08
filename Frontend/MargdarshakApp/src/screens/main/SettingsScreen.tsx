@@ -34,6 +34,13 @@ export default function SettingsScreen({ navigation }: any) {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
 
+  // Profile edit states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -121,6 +128,41 @@ export default function SettingsScreen({ navigation }: any) {
     } else {
       setShowPhoneModal(true);
     }
+  };
+
+  const handleEditProfile = () => {
+    if (profile) {
+      setEditFirstName(profile.first_name);
+      setEditLastName(profile.last_name);
+      setEditEmail(profile.email);
+    }
+    setShowEditModal(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editFirstName.trim() || !editLastName.trim()) {
+      Alert.alert('Missing Details', 'Please enter both first and last name.');
+      return;
+    }
+
+    try {
+      setIsSavingProfile(true);
+      await userService.updateProfile({
+        first_name: editFirstName.trim(),
+        last_name: editLastName.trim(),
+      });
+      Alert.alert('Success', 'Profile updated successfully!');
+      setShowEditModal(false);
+      await loadProfile();
+    } catch (error: any) {
+      Alert.alert('Update Failed', error?.response?.data?.detail || 'Unable to update profile.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleProfilePictureUpload = () => {
+    Alert.alert('Profile Picture', 'Profile picture upload feature coming soon!');
   };
 
   // Dynamic styles based on theme
@@ -237,15 +279,20 @@ export default function SettingsScreen({ navigation }: any) {
       >
         {/* Profile Section */}
         <View style={dynamicStyles.profileCard}>
-          <View style={dynamicStyles.avatar}>
-            <Text style={styles.avatarText}>{profileInitials}</Text>
-          </View>
+          <TouchableOpacity onPress={handleProfilePictureUpload} style={styles.avatarContainer}>
+            <View style={dynamicStyles.avatar}>
+              <Text style={styles.avatarText}>{profileInitials}</Text>
+            </View>
+            <View style={[styles.cameraIcon, { backgroundColor: colors.primary }]}>
+              <MaterialCommunityIcons name="camera-plus" size={16} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
           <View style={styles.profileInfo}>
             <Text style={dynamicStyles.profileName}>{profileName}</Text>
             <Text style={dynamicStyles.profileEmail}>{profileEmail}</Text>
           </View>
-          <TouchableOpacity style={dynamicStyles.editButton}>
-            <Text style={dynamicStyles.editIcon}>✏</Text>
+          <TouchableOpacity style={dynamicStyles.editButton} onPress={handleEditProfile}>
+            <MaterialCommunityIcons name="pencil" size={18} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -528,6 +575,79 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => {
+          setShowEditModal(false);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowEditModal(false);
+                }}
+              >
+                <MaterialCommunityIcons name="close" size={24} color="#333333" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalDescription}>
+              Update your profile information
+            </Text>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>First Name</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter first name"
+                placeholderTextColor="#999999"
+                value={editFirstName}
+                onChangeText={setEditFirstName}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Last Name</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter last name"
+                placeholderTextColor="#999999"
+                value={editLastName}
+                onChangeText={setEditLastName}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <TextInput
+                style={[styles.textInput, styles.textInputDisabled]}
+                value={editEmail}
+                editable={false}
+              />
+              <Text style={styles.inputHint}>Email cannot be changed</Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.modalButton, (!editFirstName.trim() || !editLastName.trim()) && styles.modalButtonDisabled]}
+              onPress={handleSaveProfile}
+              disabled={!editFirstName.trim() || !editLastName.trim() || isSavingProfile}
+            >
+              <Text style={styles.modalButtonText}>{isSavingProfile ? 'Saving...' : 'Save Changes'}</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.modalFooter}>
+              Changes will be saved immediately
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -589,6 +709,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 16,
+  },
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   profileInfo: {
     flex: 1,
@@ -817,5 +953,35 @@ const styles = StyleSheet.create({
     color: '#999999',
     textAlign: 'center',
     marginTop: 16,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#333333',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  textInputDisabled: {
+    backgroundColor: '#F0F0F0',
+    color: '#999999',
+  },
+  inputHint: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#999999',
+    marginTop: 6,
   },
 });

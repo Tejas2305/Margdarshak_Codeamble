@@ -118,14 +118,30 @@ export default function MapScreen({ navigation }: any) {
       </View>
 
       <View style={[styles.searchContainer, { top: insets.top + 12 }]}>
-        <TouchableOpacity
-          style={[styles.searchBar, { backgroundColor: colors.surface }]}
-          onPress={() => navigation.navigate('Search')}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="magnify" size={20} color={colors.textSecondary} />
-          <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>Search destination</Text>
-        </TouchableOpacity>
+        <View style={[styles.searchWrapper, { backgroundColor: colors.surface }]}>
+          {/* From Search Bar */}
+          <TouchableOpacity
+            style={styles.searchBarRow}
+            onPress={() => navigation.navigate('Search', { searchType: 'from' })}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="circle-outline" size={18} color={colors.primary} />
+            <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>Your location</Text>
+          </TouchableOpacity>
+
+          {/* Divider Line */}
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          {/* To Search Bar */}
+          <TouchableOpacity
+            style={styles.searchBarRow}
+            onPress={() => navigation.navigate('Search', { searchType: 'to' })}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="map-marker" size={18} color="#EA4335" />
+            <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>Where to?</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           style={[styles.iconButton, { backgroundColor: colors.surface }]}
@@ -229,22 +245,31 @@ const styles = StyleSheet.create({
     gap: 8,
     zIndex: 10,
   },
-  searchBar: {
+  searchWrapper: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     borderRadius: 12,
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    paddingVertical: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
+  searchBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  divider: {
+    height: 1,
+    marginVertical: 4,
+    marginLeft: 26,
+  },
   searchPlaceholder: {
     fontSize: 14,
     marginLeft: 12,
+    flex: 1,
   },
   iconButton: {
     width: 48,

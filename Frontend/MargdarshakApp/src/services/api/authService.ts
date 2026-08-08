@@ -107,6 +107,28 @@ class AuthService {
   }
 
   /**
+   * Send email OTP for registration verification (public)
+   */
+  async sendEmailOTP(email: string): Promise<MessageResponse> {
+    const response = await apiClient.post<MessageResponse>(
+      '/auth/send-email-otp',
+      { email }
+    );
+    return response.data;
+  }
+
+  /**
+   * Verify email OTP during registration (public)
+   */
+  async verifyEmailOTP(email: string, otp: string): Promise<MessageResponse> {
+    const response = await apiClient.post<MessageResponse>(
+      '/auth/verify-email-otp',
+      { email, otp }
+    );
+    return response.data;
+  }
+
+  /**
    * Check if user is authenticated
    */
   async isAuthenticated(): Promise<boolean> {
