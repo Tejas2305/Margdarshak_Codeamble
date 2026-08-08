@@ -73,6 +73,37 @@ class UserService {
     const response = await apiClient.post<MessageResponse>('/users/verify-email-otp', payload);
     return response.data;
   }
+
+  /**
+   * Upload profile picture
+   */
+  async uploadProfilePicture(imageUri: string): Promise<{ message: string; profile_picture_url: string }> {
+    const formData = new FormData();
+    
+    const filename = imageUri.split('/').pop() || 'profile.jpg';
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+    // Backend expects field name 'file', not 'profile_picture'
+    formData.append('file', {
+      uri: imageUri,
+      name: filename,
+      type,
+    } as any);
+
+    console.log('📤 Uploading profile picture...');
+    const response = await apiClient.put<{ message: string; profile_picture_url: string }>(
+      '/users/me/profile-picture',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    
+    return response.data;
+  }
 }
 
 export default new UserService();

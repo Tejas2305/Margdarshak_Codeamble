@@ -96,6 +96,8 @@ export default function LocationPickerScreen({ navigation, route }: any) {
       return;
     }
 
+    console.log('📍 LocationPicker: Confirming location:', selectedLocation);
+
     // Navigate back to MainTabs -> Reports with the selected location
     navigation.navigate('MainTabs', {
       screen: 'Reports',
@@ -103,6 +105,8 @@ export default function LocationPickerScreen({ navigation, route }: any) {
         selectedLocation,
       },
     });
+    
+    console.log('✅ LocationPicker: Navigation called');
   };
 
   const html = `

@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -60,10 +61,18 @@ export default function ReportsScreen({ navigation, route }: any) {
 
   // Handle location selected from LocationPicker
   useEffect(() => {
+    console.log('📍 ReportsScreen: route params changed:', route?.params);
+    
     if (route?.params?.selectedLocation) {
       const loc = route.params.selectedLocation;
+      console.log('✅ Setting location from LocationPicker:', loc);
+      
       setCoordinates({ latitude: loc.lat, longitude: loc.lng });
       setLocation(loc.name);
+      
+      console.log('📌 Coordinates set to:', { latitude: loc.lat, longitude: loc.lng });
+      console.log('📌 Location name set to:', loc.name);
+      
       // Clear the param
       navigation.setParams({ selectedLocation: undefined });
     }
@@ -113,15 +122,33 @@ export default function ReportsScreen({ navigation, route }: any) {
       return;
     }
 
+    console.log('📝 Submitting report with data:', {
+      category_id: selectedCategory,
+      user_rating: severityRating,
+      description: description.trim() || null,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+      hasImage: photos.length > 0,
+    });
+
     try {
       setIsSubmitting(true);
-      await reportService.createReport({
+      const reportData = {
         category_id: selectedCategory,
         user_rating: severityRating,
-        description: description.trim(),
+        description: description.trim() || null,
         latitude: coordinates.latitude,
         longitude: coordinates.longitude,
-      });
+      };
+      
+      // Use different API based on whether there's an image
+      if (photos.length > 0) {
+        console.log('🌐 Calling /reports/create with image');
+        await reportService.createReportWithImage(reportData, photos[0]);
+      } else {
+        console.log('🌐 Calling /reports/create without image');
+        await reportService.createReport(reportData);
+      }
 
       Alert.alert('Report Submitted', 'Thank you for reporting. Your report helps keep the community safe.', [
         {
@@ -136,9 +163,37 @@ export default function ReportsScreen({ navigation, route }: any) {
         },
       ]);
     } catch (error: any) {
+      console.error('❌ Report submission error:', error);
+      console.error('   Status:', error?.response?.status);
+      console.error('   Data:', error?.response?.data);
       Alert.alert('Submission Failed', error?.response?.data?.detail || 'Unable to submit report right now.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleAddPhoto = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant photo library access to add images.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setPhotos([...photos, result.assets[0].uri]);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to pick image');
     }
   };
 
@@ -277,7 +332,7 @@ export default function ReportsScreen({ navigation, route }: any) {
             {photos.length < 4 && (
               <TouchableOpacity
                 style={[styles.photoAdd, { borderColor: colors.border, backgroundColor: colors.surface }]}
-                onPress={() => Alert.alert('Photo Upload', 'Camera/Gallery picker will open here')}
+                onPress={handleAddPhoto}
               >
                 <Text style={[styles.photoAddText, { color: colors.textSecondary }]}>+ Add Photo</Text>
               </TouchableOpacity>

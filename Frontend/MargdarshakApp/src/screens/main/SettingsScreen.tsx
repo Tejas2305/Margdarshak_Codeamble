@@ -12,6 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
 import { authService, userService } from '../../services/api';
@@ -161,8 +162,43 @@ export default function SettingsScreen({ navigation }: any) {
     }
   };
 
-  const handleProfilePictureUpload = () => {
-    Alert.alert('Profile Picture', 'Profile picture upload feature coming soon!');
+  const handleProfilePictureUpload = async () => {
+    try {
+      // Request media library permissions
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('Permission Required', 'Please allow access to your photo library to upload a profile picture.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      // Upload the image
+      const imageUri = result.assets[0].uri;
+      await userService.uploadProfilePicture(imageUri);
+      
+      Alert.alert('Success', 'Profile picture updated successfully!');
+      
+      // Reload profile to get updated data
+      await loadProfile();
+    } catch (error: any) {
+      console.error('Profile picture upload error:', error);
+      Alert.alert(
+        'Upload Failed',
+        error?.response?.data?.detail || 'Unable to upload profile picture. Please try again.'
+      );
+    }
   };
 
   // Dynamic styles based on theme
