@@ -240,15 +240,17 @@ async def sync_fir_scores_to_road_segments(db: AsyncSession):
     road_segments = seg_result.scalars().all()
 
     for seg in road_segments:
-        # Assign closest area's fir_score
-        # Default coords if not explicitly defined
         best_score = 0.0
-        min_dist = float("inf")
-        for a_id, data in area_scores.items():
-            dist = haversine_distance_km(18.5204, 73.8567, data["lat"], data["lng"])
-            if dist < min_dist:
-                min_dist = dist
-                best_score = data["score"]
+        matched = False
+        if seg.name:
+            for a_id, data in area_scores.items():
+                if data["name"].lower() in seg.name.lower() or seg.name.lower() in data["name"].lower():
+                    best_score = data["score"]
+                    matched = True
+                    break
+
+        if not matched and area_scores:
+            best_score = sum(d["score"] for d in area_scores.values()) / len(area_scores)
 
         seg.fir_score = best_score
         seg.risk_score = calculate_total_risk_score(
@@ -291,8 +293,8 @@ async def evaluate_osrm_routes(origin: LocationPoint, destination: LocationPoint
             distance_meters=round(direct_dist, 2),
             duration_seconds=round(dur, 2),
             adjusted_duration_seconds=round(dur * 1.15, 2),
-            average_risk_score=24.5,
-            safety_index=75.5,
+            average_risk_score=15.0,
+            safety_index=85.0,
             is_safest=True,
             warnings=[],
             geometry={
@@ -310,10 +312,6 @@ async def evaluate_osrm_routes(origin: LocationPoint, destination: LocationPoint
     scored_options: List[RouteSafetyOption] = []
     best_index = 0
     lowest_risk = float("inf")
-
-    # Fetch default segment risk for baseline
-    seg = await find_nearest_road_segment(db, origin.lat, origin.lng)
-    base_risk = seg.risk_score if seg else 20.0
 
     # Fetch ALL non-rejected reports with meaningful severity once
     all_reports_result = await db.execute(
@@ -338,11 +336,6 @@ async def evaluate_osrm_routes(origin: LocationPoint, destination: LocationPoint
         dist = float(r.get("distance", 0.0))
         dur = float(r.get("duration", 0.0))
         geometry = r.get("geometry")
-
-        # Slightly vary risk across alternative routes for clear comparison
-        route_risk = max(5.0, min(95.0, base_risk + (idx * 8.5) - 3.0))
-        adjusted_dur = dur * (1.0 + (route_risk / 100.0) * 0.4)
-        safety_index = round(100.0 - route_risk, 1)
 
         # Extract route coordinates from geometry ([lng, lat] pairs)
         # Sample every Nth point for performance, always include first and last
@@ -395,6 +388,19 @@ async def evaluate_osrm_routes(origin: LocationPoint, destination: LocationPoint
                         severity=int(report.computed_severity or 0),
                     )
                 )
+
+        # Calculate THIS route's risk score strictly based on the hazards/warnings ON THIS ROUTE
+        base_route_risk = 15.0
+        if warnings:
+            max_severity = max(w.severity for w in warnings)
+            warning_count = len(warnings)
+            hazard_risk = (max_severity * 0.5) + (warning_count * 5.0)
+            route_risk = max(5.0, min(95.0, base_route_risk + hazard_risk))
+        else:
+            route_risk = base_route_risk
+
+        adjusted_dur = dur * (1.0 + (route_risk / 100.0) * 0.4)
+        safety_index = round(100.0 - route_risk, 1)
 
         if route_risk < lowest_risk:
             lowest_risk = route_risk
