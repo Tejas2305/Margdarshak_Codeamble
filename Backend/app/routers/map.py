@@ -67,7 +67,7 @@ async def analyze_route_safety(
     return safety_response
 
 
-@router.get("/search-places", response_model=SearchPlaceResponse)
+@router.get("/search", response_model=SearchPlaceResponse)
 async def search_places(
     query: str = Query(..., min_length=1, description="Search query for places"),
     lat: Optional[float] = Query(None, description="Latitude for proximity search"),

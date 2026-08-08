@@ -1,3 +1,4 @@
+
 // API Request/Response Types
 
 // Auth Types
@@ -199,13 +200,28 @@ export interface RouteSafetyOption {
   average_risk_score: number;
   safety_index: number;
   is_safest: boolean;
-  warnings: string[];
+  warnings: Warning[];
   geometry?: Record<string, unknown> | null;
+}
+
+export interface Warning {
+  latitude: number;
+  longitude: number;
+  message: string;
+  severity: number;
 }
 
 export interface RouteSafetyResponse {
   routes: RouteSafetyOption[];
   recommended_route_index: number;
+}
+
+// Frontend-only synthesized warning with coordinates (derived from route geometry)
+export interface SynthesizedWarning {
+  latitude: number;
+  longitude: number;
+  message: string;
+  severity: 'high' | 'medium' | 'low';
 }
 
 export interface PlaceResult {

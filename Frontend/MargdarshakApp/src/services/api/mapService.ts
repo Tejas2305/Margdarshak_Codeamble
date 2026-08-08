@@ -23,8 +23,18 @@ class MapService {
     origin: LocationPoint,
     destination: LocationPoint
   ): Promise<RouteSafetyResponse> {
+    console.log('🔵 mapService.analyzeRouteSafety called');
+    console.log('   Origin:', origin);
+    console.log('   Destination:', destination);
+    
     const payload: RouteSafetyRequest = { origin, destination };
+    console.log('   Payload:', JSON.stringify(payload));
+    
     const response = await apiClient.post<RouteSafetyResponse>('/map/route-safety', payload);
+    
+    console.log('   Response status:', response.status);
+    console.log('   Response data:', response.data);
+    
     return response.data;
   }
 

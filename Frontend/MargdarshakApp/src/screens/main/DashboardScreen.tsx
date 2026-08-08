@@ -85,7 +85,7 @@ export default function DashboardScreen() {
     }
   };
 
-  const formatTimeAgo = (value?: string) => {
+  const formatTimeAgo = (value?: string | null) => {
     if (!value) return 'Recently';
     const createdAt = new Date(value).getTime();
     if (Number.isNaN(createdAt)) return 'Recently';

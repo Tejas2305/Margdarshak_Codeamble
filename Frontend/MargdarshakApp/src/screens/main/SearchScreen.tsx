@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
 import { mapService } from '../../services/api';
@@ -25,26 +24,6 @@ export default function SearchScreen({ navigation, route }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
-
-  useEffect(() => {
-    getCurrentLocation();
-  }, []);
-
-  const getCurrentLocation = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const position = await Location.getCurrentPositionAsync({});
-        setCurrentLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-      }
-    } catch (error) {
-      console.error('Error getting location:', error);
-    }
-  };
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -58,8 +37,8 @@ export default function SearchScreen({ navigation, route }: any) {
       setIsSearching(true);
       const response = await mapService.searchPlaces(
         query,
-        currentLocation?.lat,
-        currentLocation?.lng,
+        undefined,
+        undefined,
         10
       );
       setSearchResults(response.results);
@@ -76,32 +55,19 @@ export default function SearchScreen({ navigation, route }: any) {
   };
 
   const handleSelectPlace = (place: PlaceResult) => {
-    // For now, just show the place and go back
-    Alert.alert(
-      'Location Selected',
-      `${place.name}\nLat: ${place.lat}, Lng: ${place.lng}`,
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack()
-        }
-      ]
-    );
-  };
-
-  const handleUseCurrentLocation = () => {
-    if (currentLocation) {
-      Alert.alert(
-        'Current Location',
-        `Lat: ${currentLocation.lat.toFixed(4)}, Lng: ${currentLocation.lng.toFixed(4)}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack()
-          }
-        ]
-      );
-    }
+    // Navigate back to Map tab, passing the selected place
+    navigation.navigate('MainTabs', {
+      screen: 'Map',
+      params: {
+        selectedPlace: {
+          name: place.name.split(',')[0],
+          fullName: place.name,
+          lat: place.lat,
+          lng: place.lng,
+        },
+        searchType,
+      },
+    });
   };
 
   return (
@@ -141,26 +107,6 @@ export default function SearchScreen({ navigation, route }: any) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Current Location Option */}
-        {searchQuery === '' && currentLocation && (
-          <View style={styles.section}>
-            <TouchableOpacity 
-              style={[styles.resultRow, { backgroundColor: colors.surface }]}
-              onPress={handleUseCurrentLocation}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '20' }]}>
-                <MaterialCommunityIcons name="crosshairs-gps" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.resultTextContainer}>
-                <Text style={[styles.resultName, { color: colors.text }]}>Use current location</Text>
-                <Text style={[styles.resultAddress, { color: colors.textSecondary }]}>
-                  {currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
-
         {/* Loading State */}
         {isSearching && (
           <View style={styles.loadingContainer}>
@@ -203,6 +149,19 @@ export default function SearchScreen({ navigation, route }: any) {
             <Text style={[styles.emptyTitle, { color: colors.text }]}>No places found</Text>
             <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
               Try searching with different keywords
+            </Text>
+          </View>
+        )}
+
+        {/* Initial State */}
+        {searchQuery === '' && (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="magnify" size={64} color={colors.textSecondary} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              Search for a {searchType === 'from' ? 'starting point' : 'destination'}
+            </Text>
+            <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
+              Type a place name, address, or landmark
             </Text>
           </View>
         )}

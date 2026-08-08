@@ -20,7 +20,12 @@
         "backgroundColor": "#0A0E27",
         "foregroundImage": "./assets/icon.png"
       },
-      "package": "com.anonymous.MargdarshakApp"
+      "package": "com.anonymous.MargdarshakApp",
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_ANDROID_API_KEY"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
