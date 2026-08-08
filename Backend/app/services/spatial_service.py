@@ -5,6 +5,12 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, text
 
+from app.config import (
+    DB_HOST,
+    DB_PORT,
+    DB_USER,
+    DB_PASSWORD,
+)
 from app.models.road_segment import RoadSegment
 from app.models.area import Area
 from app.models.fir import FIR
@@ -109,11 +115,72 @@ async def search_places(query: str) -> List[Dict[str, Any]]:
 
 
 async def find_nearest_road_segment(db: AsyncSession, lat: float, lng: float) -> Optional[RoadSegment]:
+    """
+    Finds or creates the nearest specific road segment using PostGIS planet_osm_line spatial lookup.
+    """
+    road_name = None
+    osm_id = None
+
+    try:
+        conn = psycopg2.connect(
+            dbname="osrm",
+            user=DB_USER or "postgres",
+            password=DB_PASSWORD or "tejas",
+            host=DB_HOST or "localhost",
+            port=int(DB_PORT or 5432),
+        )
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT name, osm_id
+            FROM planet_osm_line
+            WHERE highway IS NOT NULL
+            ORDER BY way <-> ST_SetSRID(ST_MakePoint(%s, %s), 4326)
+            LIMIT 1;
+        """, (lng, lat))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if row:
+            road_name = row[0]
+            osm_id = int(row[1]) if row[1] else None
+    except Exception as e:
+        print(f"[find_nearest_road_segment Warning] PostGIS lookup error: {e}")
+
+    if road_name:
+        result = await db.execute(
+            select(RoadSegment).where(RoadSegment.name == road_name)
+        )
+        existing = result.scalar_one_or_none()
+        if existing:
+            if not existing.osm_id and osm_id:
+                existing.osm_id = osm_id
+                await db.commit()
+            return existing
+
+        # Create new RoadSegment for this real road
+        new_segment = RoadSegment(
+            osm_id=osm_id,
+            name=road_name,
+            base_speed_kmh=50.0,
+            updated_speed_kmh=50.0,
+            fir_score=20.0,
+            population_score=30.0,
+            community_score_b=0.0,
+            pollution_score=10.0,
+            risk_score=15.0,
+            is_dirty=False
+        )
+        db.add(new_segment)
+        await db.commit()
+        await db.refresh(new_segment)
+        return new_segment
+
+    # Fallback if PostGIS lookup returned nothing or failed
     result = await db.execute(select(RoadSegment))
     segments = result.scalars().all()
 
     if not segments:
-        # Create a default segment if none exists in db
         new_segment = RoadSegment(
             name="Default Pune Road Segment",
             base_speed_kmh=50.0,
@@ -130,9 +197,7 @@ async def find_nearest_road_segment(db: AsyncSession, lat: float, lng: float) ->
         await db.refresh(new_segment)
         return new_segment
 
-    # Find closest segment (in fallback setup without PostGIS spatial extension enabled)
-    closest = segments[0]
-    return closest
+    return segments[0]
 
 
 async def sync_fir_scores_to_road_segments(db: AsyncSession):
@@ -250,6 +315,25 @@ async def evaluate_osrm_routes(origin: LocationPoint, destination: LocationPoint
     seg = await find_nearest_road_segment(db, origin.lat, origin.lng)
     base_risk = seg.risk_score if seg else 20.0
 
+    # Fetch ALL non-rejected reports with meaningful severity once
+    all_reports_result = await db.execute(
+        select(Report).where(
+            Report.status != "REJECTED",
+            Report.computed_severity >= 40.0,
+            Report.description.isnot(None),
+            Report.description != "",
+        )
+    )
+    all_reports = all_reports_result.scalars().all()
+
+    # Buffer distance in km — reports within this distance of the route path
+    # are considered "on the route"
+    ROUTE_BUFFER_KM = 0.3  # ~300 meters
+
+    # Sample every Nth coordinate from the route geometry to avoid checking
+    # hundreds of points per report (OSRM routes can have 500+ coords)
+    SAMPLE_EVERY_N = 10
+
     for idx, r in enumerate(routes_data):
         dist = float(r.get("distance", 0.0))
         dur = float(r.get("duration", 0.0))
@@ -260,28 +344,57 @@ async def evaluate_osrm_routes(origin: LocationPoint, destination: LocationPoint
         adjusted_dur = dur * (1.0 + (route_risk / 100.0) * 0.4)
         safety_index = round(100.0 - route_risk, 1)
 
+        # Extract route coordinates from geometry ([lng, lat] pairs)
+        # Sample every Nth point for performance, always include first and last
+        route_coords: List[tuple] = []
+        if geometry and isinstance(geometry, dict):
+            coords_list = geometry.get("coordinates", [])
+            total_coords = len(coords_list)
+            for i, coord in enumerate(coords_list):
+                if isinstance(coord, (list, tuple)) and len(coord) >= 2:
+                    # Include: first point, last point, and every Nth point
+                    if i == 0 or i == total_coords - 1 or i % SAMPLE_EVERY_N == 0:
+                        # OSRM GeoJSON: [lng, lat]
+                        route_coords.append((float(coord[1]), float(coord[0])))
+
+        # Filter warnings: only include reports whose location is near this route's path
         warnings: List[WarningItem] = []
-        if seg:
-            reports_result = await db.execute(
-                select(Report).where(
-                    Report.road_segment_id == seg.segment_id,
-                    Report.status != "REJECTED"
-                )
-            )
-            reports = reports_result.scalars().all()
-            for report in reports:
-                if getattr(report, "computed_severity", 0.0) >= 70.0:
-                    message = getattr(report, "description", None)
-                    if not message:
-                        continue
-                    warnings.append(
-                        WarningItem(
-                            latitude=float(getattr(report, "latitude", 0.0) or 0.0),
-                            longitude=float(getattr(report, "longitude", 0.0) or 0.0),
-                            message=message,
-                            severity=int(getattr(report, "computed_severity", 0) or 0),
-                        )
+        for report in all_reports:
+            report_lat = float(report.latitude or 0.0)
+            report_lng = float(report.longitude or 0.0)
+
+            if report_lat == 0.0 and report_lng == 0.0:
+                continue
+
+            # Check if the report is within ROUTE_BUFFER_KM of any sampled point on this route
+            is_on_route = False
+            if route_coords:
+                for rlat, rlng in route_coords:
+                    d = haversine_distance_km(report_lat, report_lng, rlat, rlng)
+                    if d <= ROUTE_BUFFER_KM:
+                        is_on_route = True
+                        break
+            else:
+                # No geometry coords available — fallback: check proximity to
+                # the straight line between origin and destination
+                d_origin = haversine_distance_km(report_lat, report_lng, origin.lat, origin.lng)
+                d_dest = haversine_distance_km(report_lat, report_lng, destination.lat, destination.lng)
+                route_length = haversine_distance_km(origin.lat, origin.lng, destination.lat, destination.lng)
+                # Include if within buffer of either endpoint or roughly along the path
+                if d_origin <= ROUTE_BUFFER_KM or d_dest <= ROUTE_BUFFER_KM:
+                    is_on_route = True
+                elif route_length > 0 and (d_origin + d_dest) <= route_length * 1.3:
+                    is_on_route = True
+
+            if is_on_route:
+                warnings.append(
+                    WarningItem(
+                        latitude=report_lat,
+                        longitude=report_lng,
+                        message=report.description,
+                        severity=int(report.computed_severity or 0),
                     )
+                )
 
         if route_risk < lowest_risk:
             lowest_risk = route_risk

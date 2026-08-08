@@ -51,4 +51,5 @@ class VerifyOTPRequest(BaseModel):
     otp: str
 
 class VerifyEmailOTPRequest(BaseModel):
+    email: EmailStr
     otp: str
