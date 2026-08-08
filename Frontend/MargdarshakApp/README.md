@@ -1,79 +1,267 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Margdarshak - Real-Time Public Safety Navigation App
 
-# Getting Started
+<div align="center">
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+🛡️ **Safety First** • ⚡ **Real-time Alerts** • 🤝 **Community Driven**
 
-## Step 1: Start the Metro Server
+_A React Native mobile app for safer navigation_
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+</div>
 
-To start Metro, run the following command from the _root_ of your React Native project:
+---
 
+## 📱 What's Built
+
+Complete **frontend-only** mobile app with all main screens and navigation. Uses mock data (no backend integration yet).
+
+### ✅ Authentication Flow (10 Screens)
+- Splash screen with auto-navigation
+- 3-slide onboarding experience
+- Register & Login with full form validation UI
+- OTP verification
+- Password reset flow
+- Location permission request
+- Success confirmation with auto-redirect
+
+### ✅ Main App (7 Screens)
+1. **🗺️ Map Screen** - Interactive map with safety markers, search, emergency button
+2. **📝 Reports Screen** - 6 incident categories, photo upload, anonymous reporting
+3. **📊 Dashboard** - Safety score (850/1000), trends chart, alerts, emergency contacts
+4. **🚨 SOS Screen** - Emergency activation with countdown, quick action buttons
+5. **🧭 Route Comparison** - Compare 3 routes with safety scores (Safest/Fastest/Balanced)
+6. **🔍 Search Screen** - Find places with safety ratings, categories, recent searches
+7. **⚙️ Settings** - Profile, privacy toggles, app settings, logout
+
+---
+
+## 🚀 Quick Start
+
+### Run the App
 ```bash
-# using npm
-npm start
+cd /Users/vedantchandgude/Desktop/MGD/Margdarshak/Frontend/MargdarshakApp
+npx expo start
+```
+Then scan the QR code with **Expo Go** app on your Android phone.
 
-# OR using Yarn
-yarn start
+### Stop the Server
+```bash
+# Press Ctrl+C in terminal, or:
+pkill -f expo
 ```
 
-## Step 2: Start your Application
+---
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+## 📚 Documentation
 
-### For Android
+- **[HOW_TO_RUN.md](./HOW_TO_RUN.md)** - Complete guide on running, testing, and commands
+- **[SCREEN_FLOW.md](./SCREEN_FLOW.md)** - Visual guide to all 17 screens and navigation
+- **[../../../PROJECT_CONTEXT.md](../../../PROJECT_CONTEXT.md)** - Project overview and tech stack
 
-```bash
-# using npm
-npm run android
+---
 
-# OR using Yarn
-yarn android
+## 🏗️ Project Structure
+
+```
+src/
+├── screens/
+│   ├── auth/              # 8 authentication screens
+│   ├── main/              # 7 main app screens
+│   ├── onboarding/        # Onboarding slides
+│   ├── permissions/       # Permission request
+│   └── SplashScreen.tsx   # Initial splash
+├── components/ui/         # Reusable UI components
+├── navigation/
+│   ├── AuthNavigator.tsx      # Auth flow
+│   ├── MainTabNavigator.tsx   # Bottom tabs
+│   └── MainStackNavigator.tsx # Stack overlays
+└── theme/                 # Colors, typography, spacing
 ```
 
-### For iOS
+---
 
-```bash
-# using npm
-npm run ios
+## 🎨 Features
 
-# OR using Yarn
-yarn ios
+### Navigation
+- ✅ Bottom tab navigation (Map, Reports, Dashboard, SOS)
+- ✅ Stack navigation for overlays (Search, Route Comparison, Settings)
+- ✅ Smooth transitions between auth and main app
+- ✅ Auto-navigation after successful login/register
+
+### UI Components
+- ✅ Custom Button, Input, PasswordInput
+- ✅ Theme system with colors, typography, shadows
+- ✅ Interactive maps with markers and polylines
+- ✅ Safety score visualizations (circles, bars, charts)
+- ✅ Gradient cards and animated buttons
+- ✅ Form validation UI (error states)
+
+### Mock Data
+- Safety scores: 8.9/10, 9.5/10, 4.2/10
+- Incidents: Road Work, Patrol, Accident, Theft
+- Emergency contacts: Police 100, Ambulance 102, Fire 101
+- User: John Doe (john.doe@example.com)
+
+---
+
+## 🧪 Testing
+
+### Test Auth Flow
+In `App.tsx`, line 11:
+```typescript
+const [isAuthenticated, setIsAuthenticated] = useState(false);
+```
+Navigate: Splash → Onboarding → Register/Login → Permissions → Main App
+
+### Test Main App Directly
+In `App.tsx`, line 11:
+```typescript
+const [isAuthenticated, setIsAuthenticated] = useState(true);
+```
+Opens directly to Map screen with bottom tabs
+
+---
+
+## 📦 Tech Stack
+
+- **Framework**: React Native with Expo SDK 57
+- **Navigation**: React Navigation v7 (Native Stack + Bottom Tabs)
+- **Maps**: react-native-maps + expo-location
+- **UI**: Custom components with theme system
+- **Animations**: react-native-reanimated, expo-linear-gradient
+- **Language**: TypeScript
+- **Build Tool**: Expo Development Builds
+
+---
+
+## 🔄 Development Workflow
+
+### Daily Development (Fast ⚡)
+Use `npx expo start` for all code changes:
+- UI tweaks
+- Screen modifications
+- Logic updates
+- Styling changes
+
+**Reload:** ~2-5 seconds, low resources
+
+### Heavy Build (Slow 🐌)
+Use `npx expo run:android` **ONLY** when:
+- Adding new native packages
+- Changing Android config
+- Updating gradle settings
+
+**Build time:** 5-10 minutes, high CPU usage (Mac will heat up)
+
+---
+
+## 📖 Navigation Flow
+
+```
+AUTH FLOW:
+Splash → Onboarding → AuthLanding → Register/Login → Permissions → Success → Main App
+
+MAIN APP:
+├─ Bottom Tabs
+│  ├─ Map (Home)
+│  ├─ Reports
+│  ├─ Dashboard
+│  └─ SOS
+└─ Stack Screens
+   ├─ Search (from Map search bar)
+   ├─ RouteComparison (from Map "Compare Routes")
+   └─ Settings (from Map ⚙️ button)
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+---
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+## 🎯 User Journeys
 
-## Step 3: Modifying your App
+### First Time User
+```
+Download App → Splash → Onboarding → Register → OTP → Permissions → Map Screen
+```
 
-Now that you have successfully run the app, let's modify it.
+### Report Incident
+```
+Reports Tab → Select Category → Enter Details → Add Photo → Submit
+```
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+### Find Safe Route
+```
+Map → "Compare Routes" → View 3 Routes → Select Safest → Start Navigation
+```
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+### Emergency
+```
+SOS Tab → Press & Hold → 5s Countdown → SOS Activated
+```
 
-## Congratulations! :tada:
+---
 
-You've successfully run and modified your React Native App. :partying_face:
+## 🚧 What's NOT Implemented (Backend Phase)
 
-### Now what?
+- ❌ Real API calls (all mock data)
+- ❌ Authentication tokens / session management
+- ❌ Data persistence (AsyncStorage)
+- ❌ Real-time location tracking
+- ❌ Push notifications
+- ❌ Actual emergency service calls
+- ❌ Real maps API integration for safety data
+- ❌ User-uploaded incident reports
+- ❌ Social auth (Google, Apple)
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
+---
 
-# Troubleshooting
+## 📱 System Requirements
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+- **OS**: macOS (for development)
+- **Java**: 17 LTS (configured for Gradle)
+- **Android SDK**: Platform 34-36
+- **Phone**: Android device with USB debugging
+- **Internet**: For Expo Go download and Metro bundler
 
-# Learn More
+---
 
-To learn more about React Native, take a look at the following resources:
+## 💡 Tips
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+1. **Metro bundler stuck?** Press `R` to reload
+2. **App won't load?** Update Expo Go app
+3. **Mac heating?** You're running heavy build - use `npx expo start` instead
+4. **Test login?** Any email/password works (no validation yet)
+5. **Settings location?** Top-right ⚙️ button on Map screen
+
+---
+
+## 🤝 Contributing
+
+This is a **frontend-only** phase. Backend integration is the next step.
+
+When ready for backend:
+1. Replace mock data with API calls
+2. Add AsyncStorage for auth tokens
+3. Implement real location tracking
+4. Connect to maps API for safety data
+5. Add push notifications
+6. Implement real emergency service integration
+
+---
+
+## 📄 License
+
+[Add license here]
+
+---
+
+## 👨‍💻 Developer
+
+Built by Vedant Chandgude
+
+---
+
+<div align="center">
+
+**Ready to make communities safer! 🚀**
+
+[View Screen Flow](./SCREEN_FLOW.md) • [How to Run](./HOW_TO_RUN.md) • [Project Context](../../../PROJECT_CONTEXT.md)
+
+</div>

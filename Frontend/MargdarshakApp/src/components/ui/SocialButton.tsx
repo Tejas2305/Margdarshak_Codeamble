@@ -1,37 +1,72 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View, ViewStyle } from 'react-native';
-import { Colors, Typography, BorderRadius, Spacing } from '../../theme';
+import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 
-interface Props {
-  title: string; onPress: () => void;
-  provider: 'google' | 'apple'; style?: ViewStyle; disabled?: boolean;
+interface SocialButtonProps {
+  provider: 'google' | 'apple';
+  onPress: () => void;
 }
 
-const SocialButton: React.FC<Props> = ({ title, onPress, provider, style, disabled }) => {
-  const isApple = provider === 'apple';
+export const SocialButton: React.FC<SocialButtonProps> = ({ provider, onPress }) => {
+  const isGoogle = provider === 'google';
+
   return (
-    <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8}
-      style={[styles.btn, isApple && styles.appleBg, style]}>
-      <View style={styles.row}>
-        <View style={[styles.iconBox, isApple && styles.appleIconBox]}>
-          <Text style={[styles.icon, isApple && styles.appleIcon]}>{isApple ? '' : 'G'}</Text>
-        </View>
-        <Text style={[styles.text, isApple && styles.appleText]}>{title}</Text>
+    <TouchableOpacity
+      style={[styles.button, isGoogle ? styles.google : styles.apple]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={styles.iconPlaceholder}>
+        <Text style={styles.iconText}>{isGoogle ? 'G' : ''}</Text>
       </View>
+      <Text style={[styles.text, isGoogle ? styles.googleText : styles.appleText]}>
+        Continue with {isGoogle ? 'Google' : 'Apple'}
+      </Text>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  btn: { width: '100%', paddingVertical: Spacing.md + 2, paddingHorizontal: Spacing.xl, borderRadius: BorderRadius.lg, backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border, alignItems: 'center' },
-  appleBg: { backgroundColor: Colors.text, borderColor: Colors.text },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  iconBox: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#4285F4', alignItems: 'center', justifyContent: 'center', marginRight: Spacing.md },
-  appleIconBox: { backgroundColor: 'transparent' },
-  icon: { fontSize: 13, fontWeight: Typography.fontWeightBold, color: Colors.textInverse },
-  appleIcon: { fontSize: 18, color: Colors.textInverse },
-  text: { fontSize: Typography.fontSizeMD, fontWeight: Typography.fontWeightSemiBold, color: Colors.text, letterSpacing: 0.2 },
-  appleText: { color: Colors.textInverse },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.small,
+  },
+  google: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  apple: {
+    backgroundColor: colors.apple,
+  },
+  iconPlaceholder: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  iconText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.google,
+  },
+  text: {
+    fontSize: typography.button,
+    fontWeight: '600',
+  },
+  googleText: {
+    color: colors.text,
+  },
+  appleText: {
+    color: colors.background,
+  },
 });
-
-export default SocialButton;

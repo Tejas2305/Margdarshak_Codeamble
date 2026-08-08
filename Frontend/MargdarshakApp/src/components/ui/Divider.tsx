@@ -1,22 +1,39 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Typography, Spacing } from '../../theme';
+import { colors, typography, spacing } from '../../theme';
 
-const Divider: React.FC<{ label?: string }> = ({ label }) => {
-  if (!label) return <View style={styles.line} />;
-  return (
-    <View style={styles.row}>
-      <View style={styles.line} />
-      <Text style={styles.text}>{label}</Text>
-      <View style={styles.line} />
-    </View>
-  );
+interface DividerProps {
+  text?: string;
+}
+
+export const Divider: React.FC<DividerProps> = ({ text }) => {
+  if (text) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.line} />
+        <Text style={styles.text}>{text}</Text>
+        <View style={styles.line} />
+      </View>
+    );
+  }
+
+  return <View style={[styles.line, { marginVertical: spacing.md }]} />;
 };
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', marginVertical: Spacing.lg },
-  line: { flex: 1, height: 1, backgroundColor: Colors.border },
-  text: { marginHorizontal: Spacing.lg, fontSize: Typography.fontSizeSM, color: Colors.textMuted, fontWeight: Typography.fontWeightMedium },
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.lg,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  text: {
+    marginHorizontal: spacing.md,
+    fontSize: typography.bodySmall,
+    color: colors.textSecondary,
+  },
 });
-
-export default Divider;

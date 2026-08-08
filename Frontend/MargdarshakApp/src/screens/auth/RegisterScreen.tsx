@@ -1,137 +1,201 @@
-import React, { useState, useRef } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  StatusBar, Platform, Animated, KeyboardAvoidingView,
-} from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
-import { Button, Input, PasswordInput, Divider, SocialButton } from '../../components/ui';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/types';
+import { Button, Input, PasswordInput } from '../../components/ui';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeColors } from '../../theme';
+import { colors, typography, spacing } from '../../theme';
+import { authService } from '../../services/api';
 
-type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'Register'> };
+type Props = NativeStackScreenProps<AuthStackParamList, 'Register'> & {
+  onAuthSuccess?: () => void;
+};
 
-interface Form {
-  fullName: string; email: string; phone: string;
-  password: string; confirmPassword: string;
-  emergencyContact: string; agreedToTerms: boolean;
-}
-interface Errors { fullName?: string; email?: string; phone?: string; password?: string; confirmPassword?: string; terms?: string }
+export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) => {
+  const { isDark, toggleTheme } = useTheme();
+  const colors = getThemeColors(isDark);
+  
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-function validate(f: Form): Errors {
-  const e: Errors = {};
-  if (!f.fullName.trim()) e.fullName = 'Full name is required';
-  else if (f.fullName.trim().length < 3) e.fullName = 'Name must be at least 3 characters';
-  if (!f.email.trim()) e.email = 'Email is required';
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) e.email = 'Enter a valid email address';
-  if (!f.phone.trim()) e.phone = 'Phone number is required';
-  else if (!/^\d{10}$/.test(f.phone.replace(/\s/g, ''))) e.phone = 'Enter a valid 10-digit phone number';
-  if (!f.password) e.password = 'Password is required';
-  else if (f.password.length < 8) e.password = 'Must be at least 8 characters';
-  else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)/.test(f.password)) e.password = 'Include uppercase, lowercase, and a number';
-  if (!f.confirmPassword) e.confirmPassword = 'Please confirm your password';
-  else if (f.password !== f.confirmPassword) e.confirmPassword = 'Passwords do not match';
-  if (!f.agreedToTerms) e.terms = 'You must agree to the Terms & Privacy Policy';
-  return e;
-}
+  const handleRegister = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
 
-const RegisterScreen: React.FC<Props> = ({ navigation }) => {
-  const [form, setForm] = useState<Form>({ fullName: '', email: '', phone: '', password: '', confirmPassword: '', emergencyContact: '', agreedToTerms: false });
-  const [errors, setErrors] = useState<Errors>({});
-  const [loading, setLoading] = useState(false);
-  const checkAnim = useRef(new Animated.Value(0)).current;
+    if (!trimmedName || !trimmedEmail || !password) {
+      Alert.alert('Missing Details', 'Please enter your name, email, and password.');
+      return;
+    }
 
-  const set = (k: keyof Form) => (v: string | boolean) => {
-    setForm(p => ({ ...p, [k]: v }));
-    setErrors(p => ({ ...p, [k]: undefined }));
-  };
+    const [firstName, ...lastNameParts] = trimmedName.split(/\s+/);
 
-  const toggleTerms = () => {
-    const next = !form.agreedToTerms;
-    setForm(p => ({ ...p, agreedToTerms: next }));
-    Animated.spring(checkAnim, { toValue: next ? 1 : 0, useNativeDriver: true, tension: 80, friction: 6 }).start();
-    setErrors(p => ({ ...p, terms: undefined }));
-  };
+    try {
+      setIsSubmitting(true);
+      await authService.register({
+        first_name: firstName,
+        last_name: lastNameParts.join(' ') || firstName,
+        email: trimmedEmail,
+        password,
+      });
 
-  const submit = async () => {
-    const errs = validate(form);
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setLoading(false);
-    navigation.navigate('Permissions');
+      Alert.alert('Account Created', 'Please log in with your new account.', [
+        { text: 'OK', onPress: () => navigation.navigate('Login') },
+      ]);
+    } catch (error: any) {
+      Alert.alert('Registration Failed', error?.response?.data?.detail || 'Unable to create your account right now.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      
+      {/* Theme Toggle - Top Right */}
+      <TouchableOpacity 
+        style={[styles.themeToggle, { backgroundColor: colors.surfaceVariant }]}
+        onPress={toggleTheme}
+      >
+        <MaterialCommunityIcons 
+          name={isDark ? "weather-sunny" : "weather-night"} 
+          size={22} 
+          color={colors.text} 
+        />
+      </TouchableOpacity>
+      
+      {/* Back Button */}
+      <TouchableOpacity 
+        style={[styles.backButton, { backgroundColor: colors.surfaceVariant }]}
+        onPress={() => navigation.goBack()}
+      >
+        <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
+      </TouchableOpacity>
 
-        {/* Header */}
-        <View style={s.header}>
-          <TouchableOpacity style={s.back} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-            <Text style={s.backIcon}>←</Text>
-          </TouchableOpacity>
-          <View style={s.stepBadge}><Text style={s.stepText}>Create Account</Text></View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Sign up to get started</Text>
         </View>
 
-        <Text style={s.title}>Create Account</Text>
-        <Text style={s.subtitle}>Join Margdarshak for safer journeys.</Text>
+        <View style={styles.form}>
+          <Input
+            label="Full Name"
+            value={name}
+            onChangeText={setName}
+            placeholder="Enter your full name"
+            autoCapitalize="words"
+          />
+          <Input
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Enter your email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <PasswordInput
+            value={password}
+            onChangeText={setPassword}
+          />
 
-        <Input label="Full Name" value={form.fullName} onChangeText={set('fullName')} placeholder="Enter your full name" autoCapitalize="words" error={errors.fullName} required />
-        <Input label="Email Address" value={form.email} onChangeText={set('email')} placeholder="Enter your email" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} error={errors.email} required />
-        <Input label="Phone Number" value={form.phone} onChangeText={set('phone')} placeholder="10-digit phone number" keyboardType="phone-pad" error={errors.phone} required />
-        <PasswordInput label="Password" value={form.password} onChangeText={set('password')} placeholder="Create a strong password" showStrength error={errors.password} required />
-        <PasswordInput label="Confirm Password" value={form.confirmPassword} onChangeText={set('confirmPassword')} placeholder="Re-enter your password" error={errors.confirmPassword} required />
-        <Input label="Emergency Contact" value={form.emergencyContact} onChangeText={set('emergencyContact')} placeholder="Optional — for emergency alerts" keyboardType="phone-pad" hint="Notified during emergency mode." />
+          <TouchableOpacity
+            style={[styles.signupButton, { backgroundColor: colors.primary }, isSubmitting && styles.disabledButton]}
+            onPress={handleRegister}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.signupButtonText}>{isSubmitting ? 'Creating...' : 'Sign Up'}</Text>
+          </TouchableOpacity>
 
-        {/* Terms */}
-        <TouchableOpacity style={s.termsRow} onPress={toggleTerms} activeOpacity={0.8}>
-          <View style={[s.checkbox, form.agreedToTerms && s.checkboxOn]}>
-            <Animated.Text style={[s.checkmark, { transform: [{ scale: checkAnim }] }]}>✓</Animated.Text>
+          <View style={styles.loginPrompt}>
+            <Text style={[styles.loginText, { color: colors.textSecondary }]}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={[styles.loginLink, { color: colors.primary }]}>Log In</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={s.termsText}>I agree to the <Text style={s.link}>Terms of Service</Text> and <Text style={s.link}>Privacy Policy</Text></Text>
-        </TouchableOpacity>
-        {errors.terms && <Text style={s.termsErr}>{errors.terms}</Text>}
-
-        <Button title="Create Account" onPress={submit} loading={loading} style={{ marginTop: Spacing.lg }} />
-
-        <Divider label="OR" />
-        <SocialButton title="Continue with Google" provider="google" onPress={() => {}} style={{ marginBottom: Spacing.md }} />
-        {Platform.OS === 'ios' && <SocialButton title="Continue with Apple" provider="apple" onPress={() => {}} />}
-
-        <View style={s.loginRow}>
-          <Text style={s.loginText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')} activeOpacity={0.7}>
-            <Text style={s.loginLink}>Login</Text>
-          </TouchableOpacity>
         </View>
-        <View style={{ height: Spacing.xxxl }} />
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
-const s = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Colors.background },
-  scroll: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: Spacing.xxl, paddingTop: Platform.OS === 'ios' ? 60 : Spacing.xxl },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.xxl },
-  back: { width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: Colors.inputBg, alignItems: 'center', justifyContent: 'center' },
-  backIcon: { fontSize: 20, color: Colors.text, fontWeight: Typography.fontWeightBold },
-  stepBadge: { backgroundColor: Colors.primary + '15', paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.full },
-  stepText: { fontSize: Typography.fontSizeXS, color: Colors.primary, fontWeight: Typography.fontWeightMedium },
-  title: { fontSize: Typography.fontSize3XL, fontWeight: Typography.fontWeightBold, color: Colors.text, marginBottom: Spacing.sm },
-  subtitle: { fontSize: Typography.fontSizeMD, color: Colors.textSecondary, marginBottom: Spacing.xxxl, lineHeight: 22 },
-  termsRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: Spacing.sm, gap: Spacing.md },
-  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center', marginTop: 1, flexShrink: 0 },
-  checkboxOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  checkmark: { fontSize: 13, color: Colors.textInverse, fontWeight: Typography.fontWeightBold },
-  termsText: { flex: 1, fontSize: Typography.fontSizeSM, color: Colors.textSecondary, lineHeight: 20 },
-  link: { color: Colors.primary, fontWeight: Typography.fontWeightMedium },
-  termsErr: { fontSize: Typography.fontSizeXS, color: Colors.danger, marginBottom: Spacing.md, marginLeft: Spacing.xs },
-  loginRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: Spacing.xxl },
-  loginText: { fontSize: Typography.fontSizeMD, color: Colors.textSecondary },
-  loginLink: { fontSize: Typography.fontSizeMD, color: Colors.primary, fontWeight: Typography.fontWeightSemiBold },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  themeToggle: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 2,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 1,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingTop: 120,
+  },
+  header: {
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '400',
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+  },
+  form: {
+    marginTop: spacing.md,
+  },
+  signupButton: {
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  signupButtonText: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#FFFFFF',
+  },
+  loginPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+  },
+  loginText: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
+  loginLink: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
 });
-
-export default RegisterScreen;

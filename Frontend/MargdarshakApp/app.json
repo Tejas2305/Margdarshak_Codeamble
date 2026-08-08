@@ -1,4 +1,42 @@
 {
-  "name": "MargdarshakApp",
-  "displayName": "MargdarshakApp"
+  "expo": {
+    "name": "MargdarshakApp",
+    "slug": "MargdarshakApp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0E27"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.MargdarshakApp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0E27",
+        "foregroundImage": "./assets/icon.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.MargdarshakApp"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0A0E27"
+        }
+      ]
+    ]
+  }
 }

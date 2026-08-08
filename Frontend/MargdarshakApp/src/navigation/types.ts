@@ -1,10 +1,12 @@
 export type AuthStackParamList = {
+  Splash: undefined;
+  Onboarding: undefined;
   AuthLanding: undefined;
-  Login: undefined;
   Register: undefined;
+  Login: undefined;
   ForgotPassword: undefined;
-  OTPVerification: { email: string };
-  ResetPassword: { email: string };
+  OTPVerification: { email: string; flow: 'register' | 'forgot-password' };
+  ResetPassword: { email: string; otp: string };
   Permissions: undefined;
-  Success: undefined;
+  Success: { type: 'register' | 'reset-password' };
 };

@@ -6,70 +6,96 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
-  View,
 } from 'react-native';
-import { Colors, Typography, BorderRadius, Spacing } from '../../theme';
-
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-type ButtonSize = 'sm' | 'md' | 'lg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeColors, typography, spacing, borderRadius } from '../../theme';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  loading?: boolean;
+  variant?: 'primary' | 'secondary' | 'outline' | 'text';
+  size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
+  loading?: boolean;
   fullWidth?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
-  icon?: React.ReactNode;
 }
 
-const Button: React.FC<ButtonProps> = ({
+export const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
   variant = 'primary',
-  size = 'lg',
-  loading = false,
+  size = 'medium',
   disabled = false,
-  fullWidth = true,
+  loading = false,
+  fullWidth = false,
   style,
   textStyle,
-  icon,
 }) => {
-  const isDisabled = disabled || loading;
+  const { isDark } = useTheme();
+  const colors = getThemeColors(isDark);
+  
+  const buttonStyles = [
+    styles.base,
+    styles[size],
+    fullWidth && styles.fullWidth,
+    variant === 'secondary' && { backgroundColor: colors.surface },
+    variant === 'outline' && { backgroundColor: colors.transparent, borderWidth: 1.5, borderColor: colors.primary },
+    variant === 'text' && { backgroundColor: colors.transparent },
+    disabled && styles.disabled,
+    style,
+  ];
+
+  const textStyles = [
+    styles.baseText,
+    { color: colors.background },
+    styles[`${size}Text`],
+    variant === 'secondary' && { color: colors.text },
+    variant === 'outline' && { color: colors.primary },
+    variant === 'text' && { color: colors.primary },
+    disabled && styles.disabledText,
+    textStyle,
+  ];
+
+  if (variant === 'primary' && !disabled) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled || loading}
+        activeOpacity={0.8}
+        style={buttonStyles}
+      >
+        <LinearGradient
+          colors={[colors.primary, colors.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.gradient}
+        >
+          {loading ? (
+            <ActivityIndicator color={colors.background} />
+          ) : (
+            <Text style={textStyles}>{title}</Text>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <TouchableOpacity
       onPress={onPress}
-      disabled={isDisabled}
-      activeOpacity={0.8}
-      style={[
-        styles.base,
-        styles[variant],
-        styles[`size_${size}` as 'size_sm' | 'size_md' | 'size_lg'],
-        fullWidth && styles.fullWidth,
-        isDisabled && styles.disabled,
-        style,
-      ]}>
+      disabled={disabled || loading}
+      activeOpacity={0.7}
+      style={buttonStyles}
+    >
       {loading ? (
         <ActivityIndicator
-          size="small"
-          color={variant === 'outline' || variant === 'ghost' ? Colors.primary : Colors.textInverse}
+          color={variant === 'outline' ? colors.primary : colors.background}
         />
       ) : (
-        <View style={styles.content}>
-          {icon && <View style={styles.iconContainer}>{icon}</View>}
-          <Text
-            style={[
-              styles.text,
-              styles[`text_${variant}` as 'text_primary'],
-              styles[`textSize_${size}` as 'textSize_lg'],
-              textStyle,
-            ]}>
-            {title}
-          </Text>
-        </View>
+        <Text style={textStyles}>{title}</Text>
       )}
     </TouchableOpacity>
   );
@@ -77,32 +103,49 @@ const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: BorderRadius.lg,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
+    overflow: 'hidden',
   },
-  fullWidth: { width: '100%' },
-  content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  iconContainer: { marginRight: Spacing.sm },
-  primary: { backgroundColor: Colors.primary },
-  secondary: { backgroundColor: Colors.secondary },
-  outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: Colors.primary },
-  ghost: { backgroundColor: 'transparent' },
-  danger: { backgroundColor: Colors.danger },
-  size_sm: { paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg, borderRadius: BorderRadius.md },
-  size_md: { paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl },
-  size_lg: { paddingVertical: Spacing.lg, paddingHorizontal: Spacing.xl },
-  disabled: { opacity: 0.5 },
-  text: { fontWeight: Typography.fontWeightSemiBold, letterSpacing: 0.2 },
-  text_primary: { color: Colors.textInverse },
-  text_secondary: { color: Colors.textInverse },
-  text_outline: { color: Colors.primary },
-  text_ghost: { color: Colors.primary },
-  text_danger: { color: Colors.textInverse },
-  textSize_sm: { fontSize: Typography.fontSizeSM },
-  textSize_md: { fontSize: Typography.fontSizeMD },
-  textSize_lg: { fontSize: Typography.fontSizeLG },
+  small: {
+    height: 36,
+    paddingHorizontal: spacing.md,
+  },
+  medium: {
+    height: 48,
+    paddingHorizontal: spacing.lg,
+  },
+  large: {
+    height: 56,
+    paddingHorizontal: spacing.xl,
+  },
+  fullWidth: {
+    width: '100%',
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  gradient: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  baseText: {
+    fontSize: typography.button,
+    fontWeight: '600',
+  },
+  smallText: {
+    fontSize: typography.bodySmall,
+  },
+  mediumText: {
+    fontSize: typography.button,
+  },
+  largeText: {
+    fontSize: typography.h6,
+  },
+  disabledText: {
+    opacity: 0.7,
+  },
 });
-
-export default Button;

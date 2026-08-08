@@ -1,62 +1,88 @@
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, StatusBar,
-  Platform, KeyboardAvoidingView, ScrollView,
-} from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
-import { Button, Input } from '../../components/ui';
+import { Alert, View, Text, StyleSheet, ScrollView } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
+import { Button, Input } from '../../components/ui';
+import { colors, typography, spacing } from '../../theme';
+import { authService } from '../../services/api';
 
-type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'> };
+type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 
-const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
+export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submit = async () => {
-    if (!email.trim()) { setError('Email is required'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Enter a valid email address'); return; }
-    setError('');
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setLoading(false);
-    navigation.navigate('OTPVerification', { email });
+  const handleSubmit = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      Alert.alert('Email Required', 'Please enter your email address.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await authService.forgotPassword(trimmedEmail);
+      navigation.navigate('OTPVerification', { email: trimmedEmail, flow: 'forgot-password' });
+    } catch (error: any) {
+      Alert.alert('Unable to Send Code', error?.response?.data?.detail || 'Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={s.back} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Text style={s.backIcon}>←</Text>
-        </TouchableOpacity>
-        <View style={s.iconBox}><Text style={s.iconEmoji}>📧</Text></View>
-        <Text style={s.title}>Forgot Password?</Text>
-        <Text style={s.subtitle}>Enter your registered email and we'll send you a verification code.</Text>
-        <Input label="Email Address" value={email} onChangeText={v => { setEmail(v); setError(''); }}
-          placeholder="Enter your registered email" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} error={error} required />
-        <Button title="Send OTP" onPress={submit} loading={loading} />
-        <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7} style={s.backLink}>
-          <Text style={s.backLinkText}>← Back to Login</Text>
-        </TouchableOpacity>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Forgot Password?</Text>
+        <Text style={styles.subtitle}>
+          Enter your email address and we'll send you a code to reset your password
+        </Text>
+
+        <View style={styles.form}>
+          <Input
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Enter your email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          <Button
+            title="Send Code"
+            onPress={handleSubmit}
+            fullWidth
+            loading={isSubmitting}
+            disabled={isSubmitting}
+            style={{ marginTop: spacing.lg }}
+          />
+        </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
-const s = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Colors.background },
-  content: { flexGrow: 1, paddingHorizontal: Spacing.xxl, paddingTop: Platform.OS === 'ios' ? 60 : Spacing.xxl },
-  back: { width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: Colors.inputBg, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xxxl },
-  backIcon: { fontSize: 20, color: Colors.text, fontWeight: Typography.fontWeightBold },
-  iconBox: { width: 72, height: 72, borderRadius: 20, backgroundColor: Colors.primary + '12', alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xl },
-  iconEmoji: { fontSize: 36 },
-  title: { fontSize: Typography.fontSize2XL, fontWeight: Typography.fontWeightBold, color: Colors.text, marginBottom: Spacing.md },
-  subtitle: { fontSize: Typography.fontSizeMD, color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.xxxl },
-  backLink: { marginTop: Spacing.xxl, alignItems: 'center' },
-  backLinkText: { fontSize: Typography.fontSizeMD, color: Colors.primary, fontWeight: Typography.fontWeightMedium },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingTop: 60,
+  },
+  title: {
+    fontSize: typography.h2,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  subtitle: {
+    fontSize: typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.xl,
+  },
+  form: {
+    marginTop: spacing.md,
+  },
 });
-
-export default ForgotPasswordScreen;

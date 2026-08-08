@@ -1,68 +1,92 @@
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, StatusBar,
-  Platform, KeyboardAvoidingView, ScrollView,
-} from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RouteProp } from '@react-navigation/native';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
-import { Button, PasswordInput } from '../../components/ui';
+import { Alert, View, Text, StyleSheet } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
+import { Button, PasswordInput } from '../../components/ui';
+import { colors, typography, spacing } from '../../theme';
+import { authService } from '../../services/api';
 
-type Props = {
-  navigation: NativeStackNavigationProp<AuthStackParamList, 'ResetPassword'>;
-  route: RouteProp<AuthStackParamList, 'ResetPassword'>;
-};
+type Props = NativeStackScreenProps<AuthStackParamList, 'ResetPassword'>;
 
-const ResetPasswordScreen: React.FC<Props> = ({ navigation }) => {
-  const [pw, setPw] = useState('');
-  const [cpw, setCpw] = useState('');
-  const [errors, setErrors] = useState<{ pw?: string; cpw?: string }>({});
-  const [loading, setLoading] = useState(false);
+export const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
+  const { email, otp } = route.params;
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submit = async () => {
-    const e: typeof errors = {};
-    if (!pw) e.pw = 'Password is required';
-    else if (pw.length < 8) e.pw = 'At least 8 characters';
-    else if (!/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)/.test(pw)) e.pw = 'Include uppercase, lowercase, and a number';
-    if (!cpw) e.cpw = 'Please confirm your password';
-    else if (pw !== cpw) e.cpw = 'Passwords do not match';
-    if (Object.keys(e).length) { setErrors(e); return; }
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setLoading(false);
-    navigation.navigate('Login');
+  const handleReset = async () => {
+    if (password.length < 6) {
+      Alert.alert('Invalid Password', 'Password must be at least 6 characters.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Passwords Do Not Match', 'Please confirm the same password.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await authService.resetPassword(email, otp, password);
+      navigation.navigate('Success', { type: 'reset-password' });
+    } catch (error: any) {
+      Alert.alert('Reset Failed', error?.response?.data?.detail || 'Unable to reset password right now.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={s.back} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Text style={s.backIcon}>←</Text>
-        </TouchableOpacity>
-        <View style={s.iconBox}><Text style={s.iconEmoji}>🔑</Text></View>
-        <Text style={s.title}>New Password</Text>
-        <Text style={s.subtitle}>Create a strong new password, different from your previous one.</Text>
-        <PasswordInput label="New Password" value={pw} onChangeText={v => { setPw(v); setErrors(p => ({ ...p, pw: undefined })); }}
-          placeholder="Enter new password" showStrength error={errors.pw} required />
-        <PasswordInput label="Confirm Password" value={cpw} onChangeText={v => { setCpw(v); setErrors(p => ({ ...p, cpw: undefined })); }}
-          placeholder="Re-enter new password" error={errors.cpw} required />
-        <Button title="Update Password" onPress={submit} loading={loading} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <View style={styles.container}>
+      <Text style={styles.title}>Reset Password</Text>
+      <Text style={styles.subtitle}>Enter your new password</Text>
+
+      <View style={styles.form}>
+        <PasswordInput
+          label="New Password"
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Enter new password"
+        />
+        <PasswordInput
+          label="Confirm Password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholder="Confirm new password"
+        />
+
+        <Button
+          title="Reset Password"
+          onPress={handleReset}
+          fullWidth
+          loading={isSubmitting}
+          disabled={isSubmitting}
+          style={{ marginTop: spacing.lg }}
+        />
+      </View>
+    </View>
   );
 };
 
-const s = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Colors.background },
-  content: { flexGrow: 1, paddingHorizontal: Spacing.xxl, paddingTop: Platform.OS === 'ios' ? 60 : Spacing.xxl },
-  back: { width: 40, height: 40, borderRadius: BorderRadius.md, backgroundColor: Colors.inputBg, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xxxl },
-  backIcon: { fontSize: 20, color: Colors.text, fontWeight: Typography.fontWeightBold },
-  iconBox: { width: 72, height: 72, borderRadius: 20, backgroundColor: Colors.secondary + '15', alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xl },
-  iconEmoji: { fontSize: 36 },
-  title: { fontSize: Typography.fontSize2XL, fontWeight: Typography.fontWeightBold, color: Colors.text, marginBottom: Spacing.md },
-  subtitle: { fontSize: Typography.fontSizeMD, color: Colors.textSecondary, lineHeight: 22, marginBottom: Spacing.xxxl },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: spacing.lg,
+    paddingTop: 60,
+  },
+  title: {
+    fontSize: typography.h2,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  subtitle: {
+    fontSize: typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.xl,
+  },
+  form: {
+    marginTop: spacing.md,
+  },
 });
-
-export default ResetPasswordScreen;

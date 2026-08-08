@@ -1,83 +1,189 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  View, Text, StyleSheet, Animated, StatusBar, Platform, Dimensions,
-} from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
-import { Button, SocialButton, Divider } from '../../components/ui';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthStackParamList } from '../../navigation/types';
+import { useTheme } from '../../contexts/ThemeContext';
+import { getThemeColors } from '../../theme';
+import { colors, typography, spacing } from '../../theme';
 
-const { height } = Dimensions.get('window');
-type Props = { navigation: NativeStackNavigationProp<AuthStackParamList, 'AuthLanding'> };
+type Props = NativeStackScreenProps<AuthStackParamList, 'AuthLanding'>;
 
-const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
-  const fade  = useRef(new Animated.Value(0)).current;
-  const slide = useRef(new Animated.Value(40)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fade,  { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slide, { toValue: 0, duration: 600, useNativeDriver: true }),
-    ]).start();
-  }, []);
-
+export const AuthLandingScreen: React.FC<Props> = ({ navigation }) => {
+  const { isDark, toggleTheme } = useTheme();
+  const colors = getThemeColors(isDark);
+  
   return (
-    <View style={s.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.primary} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      
+      {/* Theme Toggle - Top Right */}
+      <TouchableOpacity 
+        style={[styles.themeToggle, { backgroundColor: colors.surfaceVariant }]}
+        onPress={toggleTheme}
+      >
+        <MaterialCommunityIcons 
+          name={isDark ? "weather-sunny" : "weather-night"} 
+          size={24} 
+          color={colors.text} 
+        />
+      </TouchableOpacity>
+      
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Image 
+            source={require('../../../assets/icon.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={[styles.title, { color: colors.text }]}>Margdarshak</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your safety companion on every journey</Text>
+        </View>
 
-      {/* Hero */}
-      <View style={s.hero}>
-        <Animated.View style={[s.heroContent, { opacity: fade, transform: [{ translateY: slide }] }]}>
-          <View style={s.logoBox}><Text style={s.logoEmoji}>🛡️</Text></View>
-          <Text style={s.appName}>Margdarshak</Text>
-          <View style={s.badge}>
-            <View style={s.badgeDot} />
-            <Text style={s.badgeText}>Public Safety Navigation</Text>
+        <View style={styles.authContainer}>
+          <TouchableOpacity
+            style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+            onPress={() => navigation.navigate('Register')}
+          >
+            <Text style={styles.primaryButtonText}>Sign Up with Email</Text>
+          </TouchableOpacity>
+
+          <View style={styles.divider}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textSecondary }]}>or</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
-        </Animated.View>
-      </View>
 
-      {/* Card */}
-      <Animated.View style={[s.card, { opacity: fade, transform: [{ translateY: slide }] }]}>
-        <Text style={s.welcomeTitle}>Welcome to{'\n'}Margdarshak</Text>
-        <Text style={s.welcomeSub}>Your trusted companion for safer journeys.</Text>
+          <View style={styles.socialButtons}>
+            <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+              <MaterialCommunityIcons name="google" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.socialButton, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+              <MaterialCommunityIcons name="apple" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
 
-        <Button title="Create Account" onPress={() => navigation.navigate('Register')} />
-        <View style={{ height: Spacing.md }} />
-        <Button title="Login" onPress={() => navigation.navigate('Login')} variant="outline" />
-
-        <Divider label="OR" />
-
-        <SocialButton title="Continue with Google" provider="google" onPress={() => {}} style={{ marginBottom: Spacing.md }} />
-        {Platform.OS === 'ios' && (
-          <SocialButton title="Continue with Apple" provider="apple" onPress={() => {}} />
-        )}
-
-        <Text style={s.terms}>
-          By continuing you agree to our{' '}
-          <Text style={s.termsLink}>Terms</Text> and{' '}
-          <Text style={s.termsLink}>Privacy Policy</Text>
-        </Text>
-      </Animated.View>
+          <View style={styles.loginPrompt}>
+            <Text style={[styles.loginText, { color: colors.textSecondary }]}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={[styles.loginLink, { color: colors.primary }]}>Log In</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 };
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  hero: { height: height * 0.36, backgroundColor: Colors.primary, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, alignItems: 'center', justifyContent: 'center' },
-  heroContent: { alignItems: 'center' },
-  logoBox: { width: 80, height: 80, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.lg },
-  logoEmoji: { fontSize: 42 },
-  appName: { fontSize: Typography.fontSize2XL, fontWeight: Typography.fontWeightBold, color: Colors.textInverse, letterSpacing: 0.5, marginBottom: Spacing.md },
-  badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: BorderRadius.full },
-  badgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.secondary, marginRight: Spacing.sm },
-  badgeText: { fontSize: Typography.fontSizeXS, color: 'rgba(255,255,255,0.85)', fontWeight: Typography.fontWeightMedium, letterSpacing: 0.5 },
-  card: { flex: 1, paddingHorizontal: Spacing.xxl, paddingTop: Spacing.xxxl, paddingBottom: Platform.OS === 'ios' ? 44 : Spacing.xxl },
-  welcomeTitle: { fontSize: Typography.fontSize2XL, fontWeight: Typography.fontWeightBold, color: Colors.text, lineHeight: 34, marginBottom: Spacing.sm },
-  welcomeSub: { fontSize: Typography.fontSizeMD, color: Colors.textSecondary, marginBottom: Spacing.xxl, lineHeight: 22 },
-  terms: { fontSize: Typography.fontSizeXS, color: Colors.textMuted, textAlign: 'center', lineHeight: 18, marginTop: Spacing.lg },
-  termsLink: { color: Colors.primary, fontWeight: Typography.fontWeightMedium },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  themeToggle: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    paddingTop: 100,
+    paddingBottom: spacing.xl,
+  },
+  header: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  logo: {
+    width: 180,
+    height: 180,
+    marginBottom: 24,
+  },
+  logoContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '400',
+    textAlign: 'center',
+    marginBottom: 12,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  authContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: 60,
+    paddingBottom: spacing.lg,
+  },
+  primaryButton: {
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  primaryButtonText: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#FFFFFF',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 14,
+    fontWeight: '400',
+    paddingHorizontal: 16,
+  },
+  socialButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 32,
+  },
+  socialButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginText: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
+  loginLink: {
+    fontSize: 15,
+    fontWeight: '400',
+  },
 });
-
-export default AuthLandingScreen;
