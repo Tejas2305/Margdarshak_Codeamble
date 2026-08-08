@@ -96,9 +96,12 @@ export default function LocationPickerScreen({ navigation, route }: any) {
       return;
     }
 
-    // Pass location back to ReportsScreen
-    navigation.navigate('Reports', {
-      selectedLocation,
+    // Navigate back to MainTabs -> Reports with the selected location
+    navigation.navigate('MainTabs', {
+      screen: 'Reports',
+      params: {
+        selectedLocation,
+      },
     });
   };
 

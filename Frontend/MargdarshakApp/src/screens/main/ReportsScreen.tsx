@@ -38,7 +38,7 @@ const categoryStyles = [
   { icon: 'shield-alert-outline' as const, color: '#009688' },
 ];
 
-export default function ReportsScreen() {
+export default function ReportsScreen({ navigation, route }: any) {
   const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
 
