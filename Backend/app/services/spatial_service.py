@@ -7,7 +7,8 @@ from sqlalchemy import select, func, text
 from app.models.road_segment import RoadSegment
 from app.models.area import Area
 from app.models.fir import FIR
-from app.schemas.map import LocationPoint, RouteSafetyOption, RouteSafetyResponse
+from app.models.report import Report
+from app.schemas.map import LocationPoint, RouteSafetyOption, RouteSafetyResponse, WarningItem
 from app.services.scoring_service import (
     calculate_community_score_b,
     calculate_government_score_a,
@@ -178,7 +179,7 @@ async def evaluate_osrm_routes(origin: LocationPoint, destination: LocationPoint
             average_risk_score=24.5,
             safety_index=75.5,
             is_safest=True,
-            warnings=["Standard route computed. Drive safely."],
+            warnings=[],
             geometry={
                 "type": "LineString",
                 "coordinates": [
@@ -209,11 +210,28 @@ async def evaluate_osrm_routes(origin: LocationPoint, destination: LocationPoint
         adjusted_dur = dur * (1.0 + (route_risk / 100.0) * 0.4)
         safety_index = round(100.0 - route_risk, 1)
 
-        warnings = []
-        if route_risk > 50.0:
-            warnings.append("High crime report density detected on this route.")
-        if route_risk > 35.0:
-            warnings.append("Reduced lighting/visibility area along segment.")
+        warnings: List[WarningItem] = []
+        if seg:
+            reports_result = await db.execute(
+                select(Report).where(
+                    Report.road_segment_id == seg.segment_id,
+                    Report.status != "REJECTED"
+                )
+            )
+            reports = reports_result.scalars().all()
+            for report in reports:
+                if getattr(report, "computed_severity", 0.0) >= 70.0:
+                    message = getattr(report, "description", None)
+                    if not message:
+                        continue
+                    warnings.append(
+                        WarningItem(
+                            latitude=float(getattr(report, "latitude", 0.0) or 0.0),
+                            longitude=float(getattr(report, "longitude", 0.0) or 0.0),
+                            message=message,
+                            severity=int(getattr(report, "computed_severity", 0) or 0),
+                        )
+                    )
 
         if route_risk < lowest_risk:
             lowest_risk = route_risk

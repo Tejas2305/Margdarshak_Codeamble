@@ -20,6 +20,13 @@ class RouteSafetyRequest(BaseModel):
     destination: LocationPoint
 
 
+class WarningItem(BaseModel):
+    latitude: float
+    longitude: float
+    message: str
+    severity: int
+
+
 class RouteSafetyOption(BaseModel):
     route_index: int
     distance_meters: float
@@ -28,7 +35,7 @@ class RouteSafetyOption(BaseModel):
     average_risk_score: float
     safety_index: float
     is_safest: bool
-    warnings: List[str]
+    warnings: List[WarningItem]
     geometry: Optional[Dict[str, Any]] = None
 
 
