@@ -235,7 +235,7 @@ export default function OpenStreetMapView({
       <div id="map"></div>
       <script>
         var map = L.map('map', {
-          zoomControl: true,
+          zoomControl: false, // Disable zoom controls
           attributionControl: false,
           zoomAnimation: true,
           fadeAnimation: true,

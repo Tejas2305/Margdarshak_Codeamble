@@ -26,8 +26,8 @@ import {
 } from '../../services/api/types';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const BOTTOM_SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.7;
-const BOTTOM_SHEET_MIN_HEIGHT = 180;
+const BOTTOM_SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.6;
+const BOTTOM_SHEET_MIN_HEIGHT = 100; // Minimal collapsed height - just for score
 
 // Pune center
 const PUNE_CENTER = {
@@ -339,15 +339,15 @@ export default function MapScreen({ navigation, route }: any) {
             )}
           </TouchableOpacity>
         </View>
-
-        {/* Settings */}
-        <TouchableOpacity
-          style={[styles.settingsButton, { backgroundColor: colors.surface }]}
-          onPress={() => navigation.navigate('Settings')}
-        >
-          <MaterialCommunityIcons name="cog-outline" size={22} color={colors.text} />
-        </TouchableOpacity>
       </View>
+
+      {/* Settings - Positioned separately */}
+      <TouchableOpacity
+        style={[styles.settingsButton, { backgroundColor: colors.surface }]}
+        onPress={() => navigation.navigate('Settings')}
+      >
+        <MaterialCommunityIcons name="cog-outline" size={22} color={colors.text} />
+      </TouchableOpacity>
 
       {/* ======== FIND SAFEST ROUTE BUTTON ======== */}
       {/* Auto-calls when both places selected, no manual button needed */}
@@ -406,109 +406,132 @@ export default function MapScreen({ navigation, route }: any) {
           {/* Show Route Info if route is displayed */}
           {appState === 'route_displayed' && selectedRoute ? (
             <>
-              <View style={[styles.scoreCard, { backgroundColor: colors.surface }]}>
-                <View style={styles.scoreHeader}>
-                  <Text style={[styles.scoreTitle, { color: colors.textSecondary }]}>
-                    Safest Route
-                  </Text>
-                  <View style={styles.scoreRow}>
-                    <Text style={[styles.scoreValue, { color: getSafetyColor(selectedRoute.safety_index) }]}>
+              {/* COLLAPSED: Only show score */}
+              {!isExpanded && (
+                <View style={[styles.scoreCardMinimal, { backgroundColor: colors.surface }]}>
+                  <View style={styles.scoreRowMinimal}>
+                    <Text style={[styles.scoreValueMinimal, { color: getSafetyColor(selectedRoute.safety_index) }]}>
                       {selectedRoute.safety_index.toFixed(1)}
                     </Text>
-                    <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/100</Text>
+                    <Text style={[styles.scoreMaxMinimal, { color: colors.textSecondary }]}>/100</Text>
                   </View>
                 </View>
-                <Text style={[styles.scoreLabel, { color: getSafetyColor(selectedRoute.safety_index) }]}>
-                  Safety Index
-                </Text>
-                <Text style={[styles.scoreDetails, { color: colors.textSecondary }]}>
-                  Distance: {(selectedRoute.distance_meters / 1000).toFixed(1)} km • 
-                  Duration: {Math.round(selectedRoute.adjusted_duration_seconds / 60)} min • 
-                  Warnings: {selectedRoute.warnings.length}
-                </Text>
-                <TouchableOpacity style={styles.compareButton} onPress={handleClearRoute}>
-                  <Text style={[styles.compareText, { color: colors.primary }]}>Clear route</Text>
-                </TouchableOpacity>
-              </View>
+              )}
 
-              {/* Warnings */}
-              {selectedRoute.warnings.length > 0 && (
+              {/* EXPANDED: Show full details */}
+              {isExpanded && (
                 <>
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Warnings</Text>
-                  {selectedRoute.warnings.map((warning, index) => (
-                    <View key={index} style={[styles.activityCard, { backgroundColor: colors.surface }]}>
-                      <View style={styles.warningRow}>
-                        <View style={[styles.warningDot, { backgroundColor: getSeverityColor(warning.severity) }]} />
-                        <View style={styles.warningContent}>
-                          <Text style={[styles.activityCategory, { color: colors.text }]}>{warning.message}</Text>
-                          <Text style={[styles.activityTime, { color: colors.textSecondary }]}>
-                            Severity: {warning.severity}/100
-                          </Text>
-                        </View>
+                  <View style={[styles.scoreCard, { backgroundColor: colors.surface }]}>
+                    <View style={styles.scoreHeader}>
+                      <Text style={[styles.scoreTitle, { color: colors.textSecondary }]}>
+                        Safest Route
+                      </Text>
+                      <View style={styles.scoreRow}>
+                        <Text style={[styles.scoreValue, { color: getSafetyColor(selectedRoute.safety_index) }]}>
+                          {selectedRoute.safety_index.toFixed(1)}
+                        </Text>
+                        <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/100</Text>
                       </View>
                     </View>
-                  ))}
+                    <Text style={[styles.scoreLabel, { color: getSafetyColor(selectedRoute.safety_index) }]}>
+                      Safety Index
+                    </Text>
+                    <Text style={[styles.scoreDetails, { color: colors.textSecondary }]}>
+                      Distance: {(selectedRoute.distance_meters / 1000).toFixed(1)} km • 
+                      Duration: {Math.round(selectedRoute.adjusted_duration_seconds / 60)} min • 
+                      Warnings: {selectedRoute.warnings.length}
+                    </Text>
+                  </View>
+
+                  {/* Warnings */}
+                  {selectedRoute.warnings.length > 0 && (
+                    <>
+                      <Text style={[styles.sectionTitle, { color: colors.text }]}>Warnings</Text>
+                      {selectedRoute.warnings.map((warning, index) => (
+                        <View key={index} style={[styles.activityCard, { backgroundColor: colors.surface }]}>
+                          <View style={styles.warningRow}>
+                            <View style={[styles.warningDot, { backgroundColor: getSeverityColor(warning.severity) }]} />
+                            <View style={styles.warningContent}>
+                              <Text style={[styles.activityCategory, { color: colors.text }]}>{warning.message}</Text>
+                              <Text style={[styles.activityTime, { color: colors.textSecondary }]}>
+                                Severity: {warning.severity}/100
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      ))}
+                    </>
+                  )}
                 </>
               )}
             </>
           ) : (
             <>
-              {/* Safety Score Card */}
-              <View style={[styles.scoreCard, { backgroundColor: colors.surface }]}>
-                <View style={styles.scoreHeader}>
-                  <Text style={[styles.scoreTitle, { color: colors.textSecondary }]}>
-                    {speedData?.road_name || 'Default Pune Road Segment'}
-                  </Text>
-                  <View style={styles.scoreRow}>
-                    <Text style={[styles.scoreValue, { color: safety.color }]}>
-                      {speedData ? (speedData.risk_score / 10).toFixed(1) : '-.-'}
+              {/* COLLAPSED: Only show score */}
+              {!isExpanded && speedData && (
+                <View style={[styles.scoreCardMinimal, { backgroundColor: colors.surface }]}>
+                  <View style={styles.scoreRowMinimal}>
+                    <Text style={[styles.scoreValueMinimal, { color: safety.color }]}>
+                      {(speedData.risk_score / 10).toFixed(1)}
                     </Text>
-                    <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/10</Text>
+                    <Text style={[styles.scoreMaxMinimal, { color: colors.textSecondary }]}>/10</Text>
                   </View>
                 </View>
-                <Text style={[styles.scoreLabel, { color: safety.color }]}>{safety.text}</Text>
+              )}
 
-                {speedData && (
-                  <Text style={[styles.scoreDetails, { color: colors.textSecondary }]}>
-                    Speed limit {speedData.updated_speed_kmh.toFixed(1)} km/h, risk {speedData.risk_score.toFixed(1)}
-                  </Text>
-                )}
-
-                <TouchableOpacity
-                  style={styles.compareButton}
-                  onPress={() => navigation.navigate('RouteComparison')}
-                >
-                  <Text style={[styles.compareText, { color: colors.primary }]}>Compare routes</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Nearby Activity */}
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Nearby Activity</Text>
-
-              {nearbyReports.length === 0 ? (
-                <View style={[styles.activityCard, { backgroundColor: colors.surface }]}>
-                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                    No recent reports in this area
-                  </Text>
-                </View>
-              ) : (
-                nearbyReports.map((report, index) => (
-                  <View key={index} style={[styles.activityCard, { backgroundColor: colors.surface }]}>
-                    <View style={styles.activityRow}>
-                      <View style={styles.activityLeft}>
-                        <Text style={[styles.activityCategory, { color: colors.text }]}>
-                          Category {report.category_id}
+              {/* EXPANDED: Show full details */}
+              {isExpanded && (
+                <>
+                  <View style={[styles.scoreCard, { backgroundColor: colors.surface }]}>
+                    <View style={styles.scoreHeader}>
+                      <Text style={[styles.scoreTitle, { color: colors.textSecondary }]}>
+                        {speedData?.road_name || 'Default Pune Road Segment'}
+                      </Text>
+                      <View style={styles.scoreRow}>
+                        <Text style={[styles.scoreValue, { color: safety.color }]}>
+                          {speedData ? (speedData.risk_score / 10).toFixed(1) : '-.-'}
                         </Text>
-                        <Text style={[styles.activityTime, { color: colors.textSecondary }]}>
-                          {formatTimeAgo(report.created_at || '')}
-                        </Text>
-                      </View>
-                      <View style={styles.activityRight}>
-                        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textSecondary} />
+                        <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/10</Text>
                       </View>
                     </View>
+                    <Text style={[styles.scoreLabel, { color: safety.color }]}>{safety.text}</Text>
+
+                    {speedData && (
+                      <Text style={[styles.scoreDetails, { color: colors.textSecondary }]}>
+                        Speed limit {speedData.updated_speed_kmh.toFixed(1)} km/h, risk {speedData.risk_score.toFixed(1)}
+                      </Text>
+                    )}
                   </View>
-                ))
+
+                  {/* Nearby Activity */}
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Nearby Activity</Text>
+
+                  {nearbyReports.length === 0 ? (
+                    <View style={[styles.activityCard, { backgroundColor: colors.surface }]}>
+                      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                        No recent reports in this area
+                      </Text>
+                    </View>
+                  ) : (
+                    nearbyReports.map((report, index) => (
+                      <View key={index} style={[styles.activityCard, { backgroundColor: colors.surface }]}>
+                        <View style={styles.activityRow}>
+                          <View style={styles.activityLeft}>
+                            <Text style={[styles.activityCategory, { color: colors.text }]}>
+                              Category {report.category_id}
+                            </Text>
+                            <Text style={[styles.activityTime, { color: colors.textSecondary }]}>
+                              {formatTimeAgo(report.created_at || '')}
+                            </Text>
+                          </View>
+                          <View style={styles.activityRight}>
+                            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textSecondary} />
+                          </View>
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </>
               )}
             </>
           )}
@@ -526,77 +549,66 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
 
-  // Search bar - ENHANCED
+  // Search bar - CLEAN GOOGLE MAPS STYLE (HIGHER POSITION)
   searchContainer: {
     position: 'absolute',
-    top: 60,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    gap: 12,
+    top: 38,
+    left: 12,
+    right: 70,
     zIndex: 10,
   },
   searchCard: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 7,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    gap: 14,
+    paddingVertical: 10,
+    gap: 12,
   },
   dotIndicator: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 3,
-    borderColor: '#FFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   searchDivider: {
     height: 1,
-    marginLeft: 28,
-    opacity: 0.15,
+    marginLeft: 22,
+    backgroundColor: '#E8E8E8',
   },
   settingsButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 20,
+    position: 'absolute',
+    top: 40,
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+    zIndex: 10,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
   },
   searchText: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '500',
     flex: 1,
-    letterSpacing: 0.3,
+    color: '#5F6368',
   },
 
   // Markers
@@ -700,46 +712,74 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Bottom sheet - ENHANCED
+  // Bottom sheet - POLISHED WITH DRAG HANDLE
   bottomSheet: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 24,
-    elevation: 20,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 16,
   },
   dragHandle: {
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 10,
   },
   dragIndicator: {
-    width: 48,
-    height: 5,
-    borderRadius: 3,
-    opacity: 0.3,
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#CCCCCC',
   },
   sheetContent: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingBottom: 31,
   },
 
-  // Score card - ENHANCED
-  scoreCard: {
-    padding: 28,
-    borderRadius: 24,
-    marginBottom: 24,
+  // Minimal score card (collapsed state)
+  scoreCardMinimal: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    alignItems: 'flex-end',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  scoreRowMinimal: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  scoreValueMinimal: {
+    fontSize: 25,
+    fontWeight: '900',
+    letterSpacing: -1,
+  },
+  scoreMaxMinimal: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginLeft: 3,
+    opacity: 0.6,
+  },
+
+  // Score card - ENHANCED & COMPACT (40% smaller)
+  scoreCard: {
+    padding: 16,
+    borderRadius: 0,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 8,
+    elevation: 5,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
   },
@@ -747,13 +787,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 0,
   },
   scoreTitle: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 10,
     fontWeight: '700',
-    marginRight: 16,
+    marginRight: 12,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     opacity: 0.6,
@@ -763,56 +803,56 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   scoreValue: {
-    fontSize: 56,
+    fontSize: 34,
     fontWeight: '900',
-    letterSpacing: -2,
+    letterSpacing: -1.5,
   },
   scoreMax: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: '700',
-    marginLeft: 4,
+    marginLeft: 3,
     opacity: 0.5,
   },
   scoreLabel: {
-    fontSize: 22,
+    fontSize: 14,
     fontWeight: '800',
-    marginBottom: 12,
-    letterSpacing: 0.5,
+    marginBottom: 6,
+    letterSpacing: 0.3,
   },
   scoreDetails: {
-    fontSize: 14,
-    marginBottom: 20,
-    lineHeight: 20,
+    fontSize: 11,
+    marginBottom: 12,
+    lineHeight: 16,
     fontWeight: '600',
     opacity: 0.7,
   },
   compareButton: {
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   compareText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 
-  // Activity section - ENHANCED
+  // Activity section - ENHANCED & COMPACT
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 13,
     fontWeight: '900',
-    marginBottom: 16,
+    marginBottom: 10,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     opacity: 0.9,
   },
   activityCard: {
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 16,
+    padding: 14,
+    borderRadius: 16,
+    marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 6,
+    elevation: 3,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
   },
@@ -825,19 +865,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activityCategory: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '800',
-    marginBottom: 6,
-    letterSpacing: 0.3,
+    marginBottom: 4,
+    letterSpacing: 0.2,
   },
   activityTime: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '600',
     opacity: 0.6,
   },
   activityRight: {},
   emptyText: {
-    fontSize: 15,
+    fontSize: 12,
     textAlign: 'center',
     fontWeight: '600',
     opacity: 0.5,
