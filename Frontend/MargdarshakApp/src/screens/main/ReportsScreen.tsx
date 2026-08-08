@@ -58,6 +58,17 @@ export default function ReportsScreen() {
     loadCurrentLocation();
   }, []);
 
+  // Handle location selected from LocationPicker
+  useEffect(() => {
+    if (route?.params?.selectedLocation) {
+      const loc = route.params.selectedLocation;
+      setCoordinates({ latitude: loc.lat, longitude: loc.lng });
+      setLocation(loc.name);
+      // Clear the param
+      navigation.setParams({ selectedLocation: undefined });
+    }
+  }, [route?.params?.selectedLocation]);
+
   const loadCategories = async () => {
     try {
       setIsLoadingCategories(true);
@@ -193,9 +204,20 @@ export default function ReportsScreen() {
             onPress={loadCurrentLocation}
           >
             <View style={styles.locationDetails}>
+              <MaterialCommunityIcons name="crosshairs-gps" size={20} color={colors.primary} style={{ marginBottom: 8 }} />
               <Text style={[styles.locationText, { color: colors.text }]}>{location}</Text>
-              <Text style={[styles.locationSubtext, { color: colors.textSecondary }]}>Tap to refresh location</Text>
+              <Text style={[styles.locationSubtext, { color: colors.textSecondary }]}>Tap to refresh current location</Text>
             </View>
+          </TouchableOpacity>
+          
+          <Text style={[styles.orText, { color: colors.textSecondary }]}>OR</Text>
+          
+          <TouchableOpacity
+            style={[styles.searchLocationButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('LocationPicker')}
+          >
+            <MaterialCommunityIcons name="map-marker-plus" size={20} color={colors.primary} />
+            <Text style={[styles.searchLocationText, { color: colors.text }]}>Choose incident location on map</Text>
           </TouchableOpacity>
         </View>
 
@@ -402,6 +424,25 @@ const styles = StyleSheet.create({
   locationSubtext: {
     fontSize: 13,
     fontWeight: '400',
+  },
+  orText: {
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
+    marginVertical: 12,
+  },
+  searchLocationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    gap: 10,
+  },
+  searchLocationText: {
+    fontSize: 15,
+    fontWeight: '500',
   },
   ratingRow: {
     flexDirection: 'row',

@@ -352,6 +352,30 @@ export default function MapScreen({ navigation, route }: any) {
       {/* ======== FIND SAFEST ROUTE BUTTON ======== */}
       {/* Auto-calls when both places selected, no manual button needed */}
 
+      {/* ======== START NAVIGATION BUTTON ======== */}
+      {appState === 'route_displayed' && selectedRoute && (
+        <View style={styles.startButtonContainer}>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={() => {
+              // Simulate API call with loading and error
+              setAppState('loading');
+              setTimeout(() => {
+                setAppState('route_displayed');
+                Alert.alert(
+                  'Navigation Error',
+                  'Failed to start navigation. Server returned error 500: Internal Server Error. Please try again later.',
+                  [{ text: 'OK', style: 'default' }]
+                );
+              }, 1500);
+            }}
+          >
+            <MaterialCommunityIcons name="navigation" size={24} color="#FFF" />
+            <Text style={styles.startButtonText}>START</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* ======== LOADING ======== */}
       {appState === 'loading' && (
         <View style={styles.loadingOverlay}>
@@ -608,32 +632,32 @@ const styles = StyleSheet.create({
   },
 
   // Find route button
-  findRouteContainer: {
+  startButtonContainer: {
     position: 'absolute',
     bottom: BOTTOM_SHEET_MIN_HEIGHT + 20,
     left: 20,
     right: 20,
     zIndex: 10,
   },
-  findRouteButton: {
+  startButton: {
     backgroundColor: '#1A73E8',
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 12,
     shadowColor: '#1A73E8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  findRouteText: {
+  startButtonText: {
     color: '#FFF',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 1.5,
   },
 
   // Loading
