@@ -208,6 +208,19 @@ export interface RouteSafetyResponse {
   recommended_route_index: number;
 }
 
+export interface PlaceResult {
+  name: string;
+  lat: number;
+  lng: number;
+  place_id?: string | null;
+  address?: string | null;
+}
+
+export interface SearchPlaceResponse {
+  query: string;
+  results: PlaceResult[];
+}
+
 // SOS Types
 export interface SosTriggerRequest {
   latitude: number;

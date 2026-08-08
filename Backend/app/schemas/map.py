@@ -35,3 +35,23 @@ class RouteSafetyOption(BaseModel):
 class RouteSafetyResponse(BaseModel):
     routes: List[RouteSafetyOption]
     recommended_route_index: int
+
+
+class PlaceResult(BaseModel):
+    name: str
+    lat: float
+    lng: float
+    place_id: Optional[str] = None
+    address: Optional[str] = None
+
+
+class SearchPlaceRequest(BaseModel):
+    query: str
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    limit: int = 10
+
+
+class SearchPlaceResponse(BaseModel):
+    query: str
+    results: List[PlaceResult]

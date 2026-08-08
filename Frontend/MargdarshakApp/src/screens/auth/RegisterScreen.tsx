@@ -259,6 +259,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation, onAuthSuccess }) =
             keyboardType="phone-pad"
             autoCapitalize="none"
           />
+          
           <PasswordInput
             value={password}
             onChangeText={setPassword}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,25 +7,101 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
+import { mapService } from '../../services/api';
+import { PlaceResult } from '../../services/api/types';
 
-// Mock search data
-const recentSearches = [
-  { id: '1', query: 'Downtown Mall', type: 'place' },
-  { id: '2', query: 'Central Park', type: 'place' },
-  { id: '3', query: 'Railway Station', type: 'place' },
-];
-
-export default function SearchScreen({ navigation }: any) {
+export default function SearchScreen({ navigation, route }: any) {
   const { isDark } = useTheme();
   const colors = getThemeColors(isDark);
+  const searchType = route?.params?.searchType || 'to'; // 'from' or 'to'
+  
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  const handleSearch = (query: string) => {
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
+  const getCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const position = await Location.getCurrentPositionAsync({});
+        setCurrentLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      }
+    } catch (error) {
+      console.error('Error getting location:', error);
+    }
+  };
+
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    // Implement actual search logic here
+    
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const response = await mapService.searchPlaces(
+        query,
+        currentLocation?.lat,
+        currentLocation?.lng,
+        10
+      );
+      setSearchResults(response.results);
+    } catch (error: any) {
+      console.error('Search error:', error);
+      Alert.alert(
+        'Search Failed',
+        error?.response?.data?.detail || 'Unable to search places right now.'
+      );
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectPlace = (place: PlaceResult) => {
+    // For now, just show the place and go back
+    Alert.alert(
+      'Location Selected',
+      `${place.name}\nLat: ${place.lat}, Lng: ${place.lng}`,
+      [
+        {
+          text: 'OK',
+          onPress: () => navigation.goBack()
+        }
+      ]
+    );
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (currentLocation) {
+      Alert.alert(
+        'Current Location',
+        `Lat: ${currentLocation.lat.toFixed(4)}, Lng: ${currentLocation.lng.toFixed(4)}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack()
+          }
+        ]
+      );
+    }
   };
 
   return (
@@ -35,12 +111,17 @@ export default function SearchScreen({ navigation }: any) {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: colors.background }]}>
-          <Text style={[styles.backIcon, { color: colors.text }]}>←</Text>
+          <MaterialCommunityIcons name="arrow-left" size={20} color={colors.text} />
         </TouchableOpacity>
         <View style={[styles.searchBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <MaterialCommunityIcons 
+            name={searchType === 'from' ? 'circle-outline' : 'map-marker'} 
+            size={18} 
+            color={searchType === 'from' ? colors.primary : '#EA4335'} 
+          />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Search for places..."
+            placeholder={searchType === 'from' ? 'Search starting point...' : 'Search destination...'}
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={handleSearch}
@@ -48,7 +129,7 @@ export default function SearchScreen({ navigation }: any) {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => handleSearch('')}>
-              <Text style={[styles.clearIcon, { color: colors.textSecondary }]}>✕</Text>
+              <MaterialCommunityIcons name="close" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -58,35 +139,71 @@ export default function SearchScreen({ navigation }: any) {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Recent Searches */}
-        {searchQuery === '' && recentSearches.length > 0 && (
+        {/* Current Location Option */}
+        {searchQuery === '' && currentLocation && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent</Text>
-              <TouchableOpacity>
-                <Text style={[styles.clearText, { color: colors.primary }]}>Clear</Text>
-              </TouchableOpacity>
-            </View>
-            {recentSearches.map((search) => (
-              <TouchableOpacity key={search.id} style={[styles.recentRow, { backgroundColor: colors.surface }]}>
-                <Text style={[styles.recentText, { color: colors.text }]}>{search.query}</Text>
-                <Text style={[styles.recentArrow, { color: colors.textSecondary }]}>→</Text>
+            <TouchableOpacity 
+              style={[styles.resultRow, { backgroundColor: colors.surface }]}
+              onPress={handleUseCurrentLocation}
+            >
+              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '20' }]}>
+                <MaterialCommunityIcons name="crosshairs-gps" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.resultTextContainer}>
+                <Text style={[styles.resultName, { color: colors.text }]}>Use current location</Text>
+                <Text style={[styles.resultAddress, { color: colors.textSecondary }]}>
+                  {currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Loading State */}
+        {isSearching && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Searching...</Text>
+          </View>
+        )}
+
+        {/* Search Results */}
+        {!isSearching && searchQuery !== '' && searchResults.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Results for "{searchQuery}"</Text>
+            {searchResults.map((place, index) => (
+              <TouchableOpacity 
+                key={place.place_id || index}
+                style={[styles.resultRow, { backgroundColor: colors.surface }]}
+                onPress={() => handleSelectPlace(place)}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: colors.surfaceVariant }]}>
+                  <MaterialCommunityIcons name="map-marker" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.resultTextContainer}>
+                  <Text style={[styles.resultName, { color: colors.text }]} numberOfLines={1}>
+                    {place.name.split(',')[0]}
+                  </Text>
+                  <Text style={[styles.resultAddress, { color: colors.textSecondary }]} numberOfLines={2}>
+                    {place.address || place.name}
+                  </Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             ))}
           </View>
         )}
 
-        {/* Search Results */}
-        {searchQuery !== '' && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Search Results</Text>
-            <View style={styles.emptyState}>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>No results found</Text>
-              <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
-                Try searching for different places
-              </Text>
-            </View>
+        {/* No Results */}
+        {!isSearching && searchQuery !== '' && searchResults.length === 0 && (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="map-search-outline" size={64} color={colors.textSecondary} />
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No places found</Text>
+            <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
+              Try searching with different keywords
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -114,9 +231,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backIcon: {
-    fontSize: 20,
-  },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
@@ -125,65 +239,73 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
+    gap: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
   },
-  clearIcon: {
-    fontSize: 16,
-    padding: 4,
-  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: 16,
     paddingBottom: 100,
   },
   section: {
-    marginBottom: 28,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '400',
+    fontSize: 14,
+    fontWeight: '600',
     marginBottom: 12,
+    marginLeft: 4,
   },
-  clearText: {
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  resultTextContainer: {
+    flex: 1,
+  },
+  resultName: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  resultAddress: {
     fontSize: 13,
     fontWeight: '400',
   },
-  recentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  recentText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '400',
-  },
-  recentArrow: {
-    fontSize: 18,
-  },
-  emptyState: {
+  loadingContainer: {
     alignItems: 'center',
     paddingVertical: 40,
   },
+  loadingText: {
+    fontSize: 14,
+    marginTop: 12,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: '400',
+    fontWeight: '600',
     marginBottom: 6,
+    marginTop: 16,
   },
   emptyDescription: {
     fontSize: 13,

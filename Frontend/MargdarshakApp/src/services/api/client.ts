@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@env';
 
 const normalizeBaseUrl = (url?: string) => {
-  const fallbackUrl = 'https://her-civic-books-actors.trycloudflare.com';
+  const fallbackUrl = '';
   const baseUrl = (url || fallbackUrl).replace(/\/+$/, '').replace('/openapi.json', '');
 
   return baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;

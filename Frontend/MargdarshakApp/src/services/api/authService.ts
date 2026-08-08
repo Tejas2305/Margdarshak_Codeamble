@@ -111,7 +111,7 @@ class AuthService {
    */
   async sendEmailOTP(email: string): Promise<MessageResponse> {
     const response = await apiClient.post<MessageResponse>(
-      '/auth/send-email-otp',
+      '/users/send-email-otp',
       { email }
     );
     return response.data;
@@ -122,7 +122,7 @@ class AuthService {
    */
   async verifyEmailOTP(email: string, otp: string): Promise<MessageResponse> {
     const response = await apiClient.post<MessageResponse>(
-      '/auth/verify-email-otp',
+      '/users/verify-email-otp',
       { email, otp }
     );
     return response.data;
