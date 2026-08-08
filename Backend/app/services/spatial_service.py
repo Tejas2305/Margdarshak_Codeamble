@@ -143,25 +143,23 @@ async def find_nearest_road_segment(db: AsyncSession, lat: float, lng: float) ->
 
         if row:
             road_name = row[0]
-            osm_id = int(row[1]) if row[1] else None
+            osm_id = int(row[1]) if row[1] is not None else None
     except Exception as e:
         print(f"[find_nearest_road_segment Warning] PostGIS lookup error: {e}")
 
-    if road_name:
+    # 1. Match by unique osm_id first (isolates exact physical segment)
+    if osm_id is not None:
         result = await db.execute(
-            select(RoadSegment).where(RoadSegment.name == road_name)
+            select(RoadSegment).where(RoadSegment.osm_id == osm_id)
         )
         existing = result.scalar_one_or_none()
         if existing:
-            if not existing.osm_id and osm_id:
-                existing.osm_id = osm_id
-                await db.commit()
             return existing
 
-        # Create new RoadSegment for this real road
+        # Create new segment for this exact OSM way
         new_segment = RoadSegment(
             osm_id=osm_id,
-            name=road_name,
+            name=road_name or f"Road Segment #{osm_id}",
             base_speed_kmh=50.0,
             updated_speed_kmh=50.0,
             fir_score=20.0,
@@ -175,6 +173,15 @@ async def find_nearest_road_segment(db: AsyncSession, lat: float, lng: float) ->
         await db.commit()
         await db.refresh(new_segment)
         return new_segment
+
+    # 2. Fallback match by road_name if osm_id was missing
+    if road_name:
+        result = await db.execute(
+            select(RoadSegment).where(RoadSegment.name == road_name)
+        )
+        existing = result.scalar_one_or_none()
+        if existing:
+            return existing
 
     # Fallback if PostGIS lookup returned nothing or failed
     result = await db.execute(select(RoadSegment))

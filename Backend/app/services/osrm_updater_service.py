@@ -2,6 +2,7 @@ import asyncio
 import os
 import psycopg2
 import httpx
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -24,24 +25,51 @@ _update_pending: bool = False
 _datastore_lock = asyncio.Lock()
 
 
+def log_event(message: str):
+    """
+    Logs timestamped messages to console AND to data/log.txt.
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    formatted = f"[{timestamp}] {message}"
+    print(formatted)
+
+    try:
+        csv_dir = os.path.dirname(os.path.abspath(OSRM_SPEED_CSV_PATH)) if OSRM_SPEED_CSV_PATH else "data"
+        os.makedirs(csv_dir, exist_ok=True)
+        log_file = os.path.join(csv_dir, "log.txt")
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(formatted + "\n")
+    except Exception as e:
+        print(f"[Logger Warning] Could not write to log.txt: {e}")
+
+
 async def export_speed_csv(db: AsyncSession, csv_path: str = OSRM_SPEED_CSV_PATH) -> int:
     """
     Exports non-default road segment adjusted speeds to CSV format for osrm-customize.
     CSV format: from_node,to_node,speed
     Queries PostGIS planet_osm_line and OSRM node annotations for specific road segments.
     """
+    csv_abs = os.path.abspath(csv_path) if csv_path else "data/penalty.csv"
+    os.makedirs(os.path.dirname(csv_abs), exist_ok=True)
+
     result = await db.execute(select(RoadSegment))
     segments = result.scalars().all()
 
-    dirty_segments = [s for s in segments if abs(s.updated_speed_kmh - s.base_speed_kmh) > 0.01]
-    if not dirty_segments:
-        try:
-            os.makedirs(os.path.dirname(os.path.abspath(csv_path)), exist_ok=True)
-            with open(csv_path, "w", encoding="utf-8") as f:
+    # Get segments with custom speeds, risk scores, or reports
+    target_segments = [
+        s for s in segments
+        if s.risk_score > 0.1 or abs(s.updated_speed_kmh - s.base_speed_kmh) > 0.01 or s.community_score_b > 0
+    ]
+
+    if not target_segments:
+        # Also check if any reports exist in database
+        rep_res = await db.execute(select(Report).where(Report.status != "REJECTED").limit(1))
+        if not rep_res.scalar_one_or_none():
+            with open(csv_abs, "w", encoding="utf-8") as f:
                 pass
-        except Exception:
-            pass
-        return 0
+            log_event(f"[OSRM Export] No active hazard segments or reports found. Created empty CSV at {csv_abs}")
+            return 0
+        target_segments = segments
 
     conn = None
     try:
@@ -53,16 +81,16 @@ async def export_speed_csv(db: AsyncSession, csv_path: str = OSRM_SPEED_CSV_PATH
             port=int(DB_PORT or 5432),
         )
     except Exception as e:
-        print(f"[OSRM Export Warning] Could not connect to PostGIS 'osrm' db: {e}")
+        log_event(f"[OSRM Export Warning] Could not connect to PostGIS 'osrm' db: {e}")
         conn = None
 
     written_lines = 0
     try:
-        os.makedirs(os.path.dirname(os.path.abspath(csv_path)), exist_ok=True)
         async with httpx.AsyncClient(timeout=10.0) as client:
-            with open(csv_path, "w", encoding="utf-8") as f:
-                for seg in dirty_segments:
-                    speed_int = max(15, int(round(seg.updated_speed_kmh)))
+            with open(csv_abs, "w", encoding="utf-8") as f:
+                for seg in target_segments:
+                    # Allow speed penalty to drop to 1 km/h for severe risk to force OSRM rerouting
+                    speed_int = max(1, int(round(seg.base_speed_kmh * (1.0 - (seg.risk_score / 100.0) * 0.95))))
 
                     # Fetch a sample report linked to this segment to obtain coordinates reference
                     reports_res = await db.execute(
@@ -77,17 +105,18 @@ async def export_speed_csv(db: AsyncSession, csv_path: str = OSRM_SPEED_CSV_PATH
                     if conn:
                         try:
                             cur = conn.cursor()
+                            # Fetch road way segments within 200 meters (left 200m, right 200m) of incident location
                             if seg.name and seg.name != "Default Pune Road Segment":
                                 cur.execute("""
                                     SELECT ST_AsText(way)
                                     FROM planet_osm_line
-                                    WHERE name = %s
+                                    WHERE (osm_id = %s OR name = %s)
                                     AND ST_DWithin(
                                         way::geography,
                                         ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography,
-                                        1000
+                                        200
                                     );
-                                """, (seg.name, ref_lng, ref_lat))
+                                """, (seg.osm_id, seg.name, ref_lng, ref_lat))
                                 rows = cur.fetchall()
 
                             if not rows and seg.osm_id:
@@ -103,13 +132,16 @@ async def export_speed_csv(db: AsyncSession, csv_path: str = OSRM_SPEED_CSV_PATH
                                     SELECT ST_AsText(way)
                                     FROM planet_osm_line
                                     WHERE highway IS NOT NULL
-                                    ORDER BY way <-> ST_SetSRID(ST_MakePoint(%s, %s), 4326)
-                                    LIMIT 1;
+                                    AND ST_DWithin(
+                                        way::geography,
+                                        ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography,
+                                        200
+                                    );
                                 """, (ref_lng, ref_lat))
                                 rows = cur.fetchall()
                             cur.close()
                         except Exception as pge:
-                            print(f"[OSRM Export Warning] PostGIS query error for segment {seg.segment_id}: {pge}")
+                            log_event(f"[OSRM Export Warning] PostGIS query error for segment {seg.segment_id}: {pge}")
 
                     for row in rows:
                         wkt = row[0]
@@ -119,6 +151,11 @@ async def export_speed_csv(db: AsyncSession, csv_path: str = OSRM_SPEED_CSV_PATH
                         points = [c.strip().split() for c in coords]
                         if len(points) < 2:
                             continue
+
+                        # Sample points if list is long to avoid exceeding OSRM URL coordinate limits
+                        if len(points) > 50:
+                            step = (len(points) + 49) // 50
+                            points = points[::step]
 
                         coord_str = ";".join(f"{p[0]},{p[1]}" for p in points)
                         osrm_url = f"http://localhost:5000/route/v1/driving/{coord_str}"
@@ -138,13 +175,15 @@ async def export_speed_csv(db: AsyncSession, csv_path: str = OSRM_SPEED_CSV_PATH
                                                 f.write(f"{n2},{n1},{speed_int}\n")
                                                 written_lines += 2
                         except Exception as osrm_e:
-                            print(f"[OSRM Export Warning] OSRM node lookup failed for segment {seg.segment_id}: {osrm_e}")
+                            log_event(f"[OSRM Export Warning] OSRM node lookup failed for segment {seg.segment_id}: {osrm_e}")
+                f.flush()
     except Exception as e:
-        print(f"[OSRM Export Warning] Could not write speed CSV: {e}")
+        log_event(f"[OSRM Export Warning] Could not write speed CSV: {e}")
     finally:
         if conn:
             conn.close()
 
+    log_event(f"[OSRM Export] Wrote {written_lines} node penalty records to '{csv_abs}'.")
     return written_lines
 
 
@@ -178,25 +217,41 @@ async def _run_update_pipeline():
             # 2. Export updated speeds CSV
             csv_lines = await export_speed_csv(db)
 
-        print(f"[OSRM Updater] Recalculated {updated_count} dirty segments. Exported {csv_lines} CSV records.")
+        file_path = os.path.abspath(OSRM_FILE_PATH) if OSRM_FILE_PATH else ""
+        csv_path_abs = os.path.abspath(OSRM_SPEED_CSV_PATH) if OSRM_SPEED_CSV_PATH else ""
 
-        # 3. Hot-swap OSRM memory metric if subprocess customize is enabled
-        if ENABLE_OSRM_SUBPROCESS_CUSTOMIZE and os.path.exists(OSRM_FILE_PATH):
+        log_event(f"[OSRM Updater] Pipeline execution completed. Dirty segments updated: {updated_count}, CSV records: {csv_lines}.")
+
+        # 3. Hot-swap OSRM memory metric if enabled or OSRM file exists
+        if ENABLE_OSRM_SUBPROCESS_CUSTOMIZE or (file_path and os.path.exists(file_path)):
             try:
+                log_event(f"[OSRM Updater] Executing osrm-customize on '{file_path}' using '--segment-speed-file {csv_path_abs}'...")
                 proc1 = await asyncio.create_subprocess_exec(
                     "osrm-customize",
-                    OSRM_FILE_PATH,
+                    file_path,
                     "--segment-speed-file",
-                    OSRM_SPEED_CSV_PATH,
+                    csv_path_abs,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
                 )
-                await proc1.wait()
+                stdout1, stderr1 = await proc1.communicate()
+                out1_str = (stdout1.decode() + "\n" + stderr1.decode()).strip()
+                if out1_str:
+                    log_event(f"[osrm-customize output]\n{out1_str}")
+                log_event(f"[OSRM Updater] osrm-customize finished with return code {proc1.returncode}")
 
+                log_event(f"[OSRM Updater] Executing osrm-datastore --only-metric=true on '{file_path}'...")
                 proc2 = await asyncio.create_subprocess_exec(
                     "osrm-datastore",
-                    "--only-metric",
-                    OSRM_FILE_PATH,
+                    "--only-metric=true",
+                    file_path,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
                 )
-                await proc2.wait()
-                print("[OSRM Updater] osrm-customize and osrm-datastore executed successfully.")
+                stdout2, stderr2 = await proc2.communicate()
+                out2_str = (stdout2.decode() + "\n" + stderr2.decode()).strip()
+                if out2_str:
+                    log_event(f"[osrm-datastore output]\n{out2_str}")
+                log_event(f"[OSRM Updater] osrm-datastore finished with return code {proc2.returncode}")
             except Exception as e:
-                print(f"[OSRM Subprocess Error] {e}")
+                log_event(f"[OSRM Subprocess Error] {e}")
