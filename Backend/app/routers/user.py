@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-
+from pydantic import BaseModel, EmailStr
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,7 @@ from app.schemas.user import (
     ChangePasswordRequest,
     SendOTPRequest,
     VerifyOTPRequest,
+    SendEmailOTPRequest,
     VerifyEmailOTPRequest,
 )
 from sqlalchemy import delete, select
@@ -128,15 +129,22 @@ async def send_phone_otp_api(request: SendOTPRequest):
         "message": "OTP sent successfully"
     }
 
+@router.post("/send-phone-otp")
+async def send_phone_otp_api(request: SendOTPRequest):
+    send_phone_otp(request.phone_number)
+
+    return {
+        "message": "OTP sent successfully"
+    }
+
+
 @router.post("/verify-phone-otp")
 async def verify_phone_otp_endpoint(
     request: VerifyOTPRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: AsyncSession = Depends(get_db)
 ):
-
     is_verified = verify_phone_otp(
-        current_user.phone_number,
+        request.phone_number,
         request.otp
     )
 
@@ -146,53 +154,77 @@ async def verify_phone_otp_endpoint(
             detail="Invalid OTP"
         )
 
-    # Update database
-    current_user.phone_verified = True
+    result = await db.execute(
+        select(User).where(
+            User.phone_number == request.phone_number
+        )
+    )
+
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    user.phone_verified = True
 
     await db.commit()
-
-    await db.refresh(current_user)
+    await db.refresh(user)
 
     return {
         "message": "Phone number verified successfully"
     }
 
+
 @router.post("/send-email-otp")
 async def send_email_otp_api(
-    current_user: User = Depends(get_current_user),
+    request: SendEmailOTPRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    # Generate a new OTP
-    otp = generate_otp()
-
-    # OTP expiry time (10 minutes)
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
-
-    # Delete any previous OTP for this user
-    await db.execute(
-        delete(EmailOTP).where(
-            EmailOTP.user_id == current_user.user_id
+    result = await db.execute(
+        select(User).where(
+            User.email == request.email
         )
     )
 
-    # Create new OTP record
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    otp = generate_otp()
+
+    expires_at = (
+        datetime.now(timezone.utc)
+        + timedelta(minutes=10)
+    )
+
+    await db.execute(
+        delete(EmailOTP).where(
+            EmailOTP.user_id == user.user_id
+        )
+    )
+
     new_otp = EmailOTP(
-        user_id=current_user.user_id,
+        user_id=user.user_id,
         otp=otp,
         expires_at=expires_at
     )
 
-    # Save OTP to database
     db.add(new_otp)
+
     await db.commit()
 
-    # Send email
     status = send_email_otp(
-        current_user.email,
+        request.email,
         otp
     )
 
-    # Check if email was sent
     if status != 202:
         raise HTTPException(
             status_code=500,
@@ -203,16 +235,29 @@ async def send_email_otp_api(
         "message": "OTP sent successfully"
     }
 
+
 @router.post("/verify-email-otp")
 async def verify_email_otp(
     request: VerifyEmailOTPRequest,
-    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    # Find OTP
+    result = await db.execute(
+        select(User).where(
+            User.email == request.email
+        )
+    )
+
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
     result = await db.execute(
         select(EmailOTP).where(
-            EmailOTP.user_id == current_user.user_id,
+            EmailOTP.user_id == user.user_id,
             EmailOTP.otp == request.otp
         )
     )
@@ -225,7 +270,6 @@ async def verify_email_otp(
             detail="Invalid OTP"
         )
 
-    # Check expiry
     if otp_record.expires_at < datetime.now(timezone.utc):
         await db.delete(otp_record)
         await db.commit()
@@ -235,14 +279,12 @@ async def verify_email_otp(
             detail="OTP has expired"
         )
 
-    # Verify email
-    current_user.email_verified = True
+    user.email_verified = True
 
-    # Delete OTP
     await db.delete(otp_record)
 
     await db.commit()
-    await db.refresh(current_user)
+    await db.refresh(user)
 
     return {
         "message": "Email verified successfully"

@@ -2,7 +2,12 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import date
 
+from pydantic import BaseModel, EmailStr
 
+
+class SendEmailOTPRequest(BaseModel):
+    email: EmailStr
+    
 class UpdateProfileRequest(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
