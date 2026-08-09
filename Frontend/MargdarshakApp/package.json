@@ -25,6 +25,7 @@
     "expo-status-bar": "~2.0.1",
     "jwt-decode": "^4.0.0",
     "lottie-react-native": "7.1.0",
+    "lucide-react-native": "^1.30.0",
     "metro": "^0.81.5",
     "metro-cache": "^0.81.5",
     "metro-config": "^0.81.5",

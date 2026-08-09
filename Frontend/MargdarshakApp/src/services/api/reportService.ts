@@ -31,8 +31,8 @@ class ReportService {
       formData.append('description', data.description);
     }
 
-    // Add image if provided
-    if (imageUri) {
+    // Only add image if URI is provided and not empty
+    if (imageUri && imageUri.trim()) {
       const filename = imageUri.split('/').pop() || 'incident.jpg';
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : 'image/jpeg';

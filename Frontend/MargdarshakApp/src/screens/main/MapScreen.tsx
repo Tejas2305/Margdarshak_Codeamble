@@ -10,6 +10,7 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -156,6 +157,17 @@ export default function MapScreen({ navigation, route }: any) {
       setRouteResponse(response);
       const safest = response.routes[response.recommended_route_index] || response.routes[0];
       
+      console.log('📍 All routes received:', response.routes.length);
+      response.routes.forEach((r, idx) => {
+        console.log(`   Route ${idx}:`, {
+          distance: `${(r.distance_meters / 1000).toFixed(1)}km`,
+          duration: `${Math.round(r.duration_seconds / 60)}min`,
+          safety: r.safety_index,
+          isSafest: r.is_safest,
+          warnings: r.warnings.length
+        });
+      });
+      
       console.log('📍 Selected route:', {
         index: safest.route_index,
         distance: safest.distance_meters,
@@ -163,6 +175,32 @@ export default function MapScreen({ navigation, route }: any) {
         safety: safest.safety_index,
         warnings: safest.warnings.length,
       });
+      
+      // Log actual warning details
+      if (safest.warnings && safest.warnings.length > 0) {
+        console.log('⚠️ ===== WARNINGS ON SELECTED ROUTE =====');
+        console.log(`Total warnings: ${safest.warnings.length}`);
+        safest.warnings.forEach((w, i) => {
+          console.log(`Warning ${i + 1}:`);
+          console.log(`  Latitude:  ${w.latitude}`);
+          console.log(`  Longitude: ${w.longitude}`);
+          console.log(`  Message:   "${w.message}"`);
+          console.log(`  Severity:  ${w.severity}/100`);
+          
+          // Validate coordinates
+          const latValid = w.latitude >= 8 && w.latitude <= 37;
+          const lngValid = w.longitude >= 68 && w.longitude <= 97;
+          
+          if (!latValid || !lngValid) {
+            console.error(`  ❌ INVALID COORDINATES! (India valid range: lat 8-37, lng 68-97)`);
+          } else {
+            console.log(`  ✅ Coordinates valid for India`);
+          }
+        });
+        console.log('⚠️ ===== END WARNINGS =====');
+      } else {
+        console.log('✅ No warnings on this route');
+      }
       
       setSelectedRoute(safest);
       setAppState('route_displayed');
@@ -188,13 +226,29 @@ export default function MapScreen({ navigation, route }: any) {
     setSelectedRoute(null);
   };
 
-  // Route coordinates for Polyline
+  // Route coordinates for selected route
   const routeCoordinates = selectedRoute?.geometry
     ? ((selectedRoute.geometry as any)?.coordinates as number[][] || []).map(c => ({
         latitude: c[1],
         longitude: c[0],
       }))
     : [];
+
+  // Prepare all routes for map display
+  const allRoutesForMap = routeResponse?.routes.map(route => {
+    const isSelected = selectedRoute?.route_index === route.route_index;
+    return {
+      coordinates: route.geometry
+        ? ((route.geometry as any)?.coordinates as number[][] || []).map(c => ({
+            latitude: c[1],
+            longitude: c[0],
+          }))
+        : [],
+      color: isSelected ? '#1A73E8' : getSafetyColor(route.safety_index), // Selected route is blue
+      isSelected: isSelected,
+      isSafest: route.is_safest,
+    };
+  }) || [];
 
   // Log route coordinates for debugging
   useEffect(() => {
@@ -284,7 +338,8 @@ export default function MapScreen({ navigation, route }: any) {
         fromPlace={fromPlace}
         toPlace={toPlace}
         warnings={selectedRoute?.warnings}
-        routeColor={getSafetyColor(selectedRoute?.safety_index || 50)}
+        routeColor={'#1A73E8'}
+        allRoutes={allRoutesForMap.length > 0 ? allRoutesForMap : undefined}
         onMapReady={() => {
           console.log('🗺️ OpenStreetMap is ready!');
         }}
@@ -354,26 +409,22 @@ export default function MapScreen({ navigation, route }: any) {
 
       {/* ======== START NAVIGATION BUTTON ======== */}
       {appState === 'route_displayed' && selectedRoute && (
-        <View style={styles.startButtonContainer}>
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={() => {
-              // Simulate API call with loading and error
-              setAppState('loading');
-              setTimeout(() => {
-                setAppState('route_displayed');
-                Alert.alert(
-                  'Navigation Error',
-                  'Failed to start navigation. Server returned error 500: Internal Server Error. Please try again later.',
-                  [{ text: 'OK', style: 'default' }]
-                );
-              }, 1500);
-            }}
-          >
-            <MaterialCommunityIcons name="navigation" size={24} color="#FFF" />
-            <Text style={styles.startButtonText}>START</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.fabStartButton}
+          onPress={() => {
+            setAppState('loading');
+            setTimeout(() => {
+              setAppState('route_displayed');
+              Alert.alert(
+                'Navigation Error',
+                'Failed to start navigation. Server returned error 500: Internal Server Error. Please try again later.',
+                [{ text: 'OK', style: 'default' }]
+              );
+            }, 1500);
+          }}
+        >
+          <MaterialCommunityIcons name="navigation" size={28} color="#FFF" />
+        </TouchableOpacity>
       )}
 
       {/* ======== LOADING ======== */}
@@ -386,157 +437,162 @@ export default function MapScreen({ navigation, route }: any) {
         </View>
       )}
 
-      {/* ======== SLIDING BOTTOM SHEET ======== */}
-      <Animated.View
-        style={[
-          styles.bottomSheet,
-          {
-            height: bottomSheetY,
-            backgroundColor: colors.background,
-          },
-        ]}
-      >
-        {/* Drag Handle */}
-        <View {...panResponder.panHandlers} style={styles.dragHandle}>
-          <View style={[styles.dragIndicator, { backgroundColor: colors.border }]} />
-        </View>
-
-        {/* Content */}
-        <View style={styles.sheetContent}>
-          {/* Show Route Info if route is displayed */}
-          {appState === 'route_displayed' && selectedRoute ? (
-            <>
-              {/* COLLAPSED: Only show score */}
-              {!isExpanded && (
-                <View style={[styles.scoreCardMinimal, { backgroundColor: colors.surface }]}>
-                  <View style={styles.scoreRowMinimal}>
-                    <Text style={[styles.scoreValueMinimal, { color: getSafetyColor(selectedRoute.safety_index) }]}>
-                      {selectedRoute.safety_index.toFixed(1)}
-                    </Text>
-                    <Text style={[styles.scoreMaxMinimal, { color: colors.textSecondary }]}>/100</Text>
+      {/* ======== ROUTE OPTIONS (if multiple routes) ======== */}
+      {appState === 'route_displayed' && routeResponse && routeResponse.routes.length > 1 && (
+        <View style={styles.routeOptionsContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.routeOptionsScroll}>
+            {routeResponse.routes.map((route, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.routeCard,
+                  { 
+                    backgroundColor: colors.surface,
+                    borderWidth: selectedRoute?.route_index === route.route_index ? 3 : 1,
+                    borderColor: selectedRoute?.route_index === route.route_index ? colors.primary : colors.border,
+                  }
+                ]}
+                onPress={() => {
+                  console.log(`Switching to route ${index}`);
+                  setSelectedRoute(route);
+                }}
+              >
+                {route.is_safest && (
+                  <View style={[styles.recommendedBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.recommendedText}>SAFEST</Text>
                   </View>
-                </View>
-              )}
-
-              {/* EXPANDED: Show full details */}
-              {isExpanded && (
-                <>
-                  <View style={[styles.scoreCard, { backgroundColor: colors.surface }]}>
-                    <View style={styles.scoreHeader}>
-                      <Text style={[styles.scoreTitle, { color: colors.textSecondary }]}>
-                        Safest Route
-                      </Text>
-                      <View style={styles.scoreRow}>
-                        <Text style={[styles.scoreValue, { color: getSafetyColor(selectedRoute.safety_index) }]}>
-                          {selectedRoute.safety_index.toFixed(1)}
-                        </Text>
-                        <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/100</Text>
-                      </View>
-                    </View>
-                    <Text style={[styles.scoreLabel, { color: getSafetyColor(selectedRoute.safety_index) }]}>
-                      Safety Index
+                )}
+                <View style={styles.routeCardContent}>
+                  <View style={[styles.safetyIndicator, { backgroundColor: getSafetyColor(route.safety_index) }]} />
+                  <View style={styles.routeInfo}>
+                    <Text style={[styles.routeTitle, { color: colors.text }]}>Route {index + 1}</Text>
+                    <Text style={[styles.routeSafety, { color: getSafetyColor(route.safety_index) }]}>
+                      Safety: {route.safety_index.toFixed(0)}/100
                     </Text>
-                    <Text style={[styles.scoreDetails, { color: colors.textSecondary }]}>
-                      Distance: {(selectedRoute.distance_meters / 1000).toFixed(1)} km • 
-                      Duration: {Math.round(selectedRoute.adjusted_duration_seconds / 60)} min • 
-                      Warnings: {selectedRoute.warnings.length}
+                    <Text style={[styles.routeDetails, { color: colors.textSecondary }]}>
+                      {(route.distance_meters / 1000).toFixed(1)} km • {Math.round(route.duration_seconds / 60)} min
                     </Text>
-                  </View>
-
-                  {/* Warnings */}
-                  {selectedRoute.warnings.length > 0 && (
-                    <>
-                      <Text style={[styles.sectionTitle, { color: colors.text }]}>Warnings</Text>
-                      {selectedRoute.warnings.map((warning, index) => (
-                        <View key={index} style={[styles.activityCard, { backgroundColor: colors.surface }]}>
-                          <View style={styles.warningRow}>
-                            <View style={[styles.warningDot, { backgroundColor: getSeverityColor(warning.severity) }]} />
-                            <View style={styles.warningContent}>
-                              <Text style={[styles.activityCategory, { color: colors.text }]}>{warning.message}</Text>
-                              <Text style={[styles.activityTime, { color: colors.textSecondary }]}>
-                                Severity: {warning.severity}/100
-                              </Text>
-                            </View>
-                          </View>
-                        </View>
-                      ))}
-                    </>
-                  )}
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              {/* COLLAPSED: Only show score */}
-              {!isExpanded && speedData && (
-                <View style={[styles.scoreCardMinimal, { backgroundColor: colors.surface }]}>
-                  <View style={styles.scoreRowMinimal}>
-                    <Text style={[styles.scoreValueMinimal, { color: safety.color }]}>
-                      {(speedData.risk_score / 10).toFixed(1)}
-                    </Text>
-                    <Text style={[styles.scoreMaxMinimal, { color: colors.textSecondary }]}>/10</Text>
-                  </View>
-                </View>
-              )}
-
-              {/* EXPANDED: Show full details */}
-              {isExpanded && (
-                <>
-                  <View style={[styles.scoreCard, { backgroundColor: colors.surface }]}>
-                    <View style={styles.scoreHeader}>
-                      <Text style={[styles.scoreTitle, { color: colors.textSecondary }]}>
-                        {speedData?.road_name || 'Default Pune Road Segment'}
-                      </Text>
-                      <View style={styles.scoreRow}>
-                        <Text style={[styles.scoreValue, { color: safety.color }]}>
-                          {speedData ? (speedData.risk_score / 10).toFixed(1) : '-.-'}
-                        </Text>
-                        <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/10</Text>
-                      </View>
-                    </View>
-                    <Text style={[styles.scoreLabel, { color: safety.color }]}>{safety.text}</Text>
-
-                    {speedData && (
-                      <Text style={[styles.scoreDetails, { color: colors.textSecondary }]}>
-                        Speed limit {speedData.updated_speed_kmh.toFixed(1)} km/h, risk {speedData.risk_score.toFixed(1)}
+                    {route.warnings.length > 0 && (
+                      <Text style={[styles.routeWarnings, { color: colors.textTertiary }]}>
+                        ⚠️ {route.warnings.length} warning{route.warnings.length > 1 ? 's' : ''}
                       </Text>
                     )}
                   </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
-                  {/* Nearby Activity */}
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Nearby Activity</Text>
+      {/* ======== SLIDING BOTTOM SHEET ======== */}
+      {/* Only show when route is displayed */}
+      {appState === 'route_displayed' && selectedRoute && (
+        <Animated.View
+          style={[
+            styles.bottomSheet,
+            {
+              height: bottomSheetY,
+              backgroundColor: colors.background,
+            },
+          ]}
+        >
+          {/* Drag Handle */}
+          <View {...panResponder.panHandlers} style={styles.dragHandle}>
+            <View style={[styles.dragIndicator, { backgroundColor: colors.border }]} />
+          </View>
 
-                  {nearbyReports.length === 0 ? (
-                    <View style={[styles.activityCard, { backgroundColor: colors.surface }]}>
-                      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                        No recent reports in this area
+          {/* Content */}
+          <View style={styles.sheetContent}>
+            {/* COLLAPSED: Only show score */}
+            {!isExpanded && (
+              <View style={[styles.scoreCardMinimal, { backgroundColor: colors.surface }]}>
+                <View style={styles.scoreRowMinimal}>
+                  <Text style={[styles.scoreValueMinimal, { color: getSafetyColor(selectedRoute.safety_index) }]}>
+                    {selectedRoute.safety_index.toFixed(1)}
+                  </Text>
+                  <Text style={[styles.scoreMaxMinimal, { color: colors.textSecondary }]}>/100</Text>
+                </View>
+              </View>
+            )}
+
+            {/* EXPANDED: Show full details */}
+            {isExpanded && (
+              <>
+                <View style={[styles.scoreCard, { backgroundColor: colors.surface }]}>
+                  <View style={styles.scoreHeader}>
+                    <Text style={[styles.scoreTitle, { color: colors.textSecondary }]}>
+                      Safest Route
+                    </Text>
+                    <View style={styles.scoreRow}>
+                      <Text style={[styles.scoreValue, { color: getSafetyColor(selectedRoute.safety_index) }]}>
+                        {selectedRoute.safety_index.toFixed(1)}
                       </Text>
+                      <Text style={[styles.scoreMax, { color: colors.textSecondary }]}>/100</Text>
                     </View>
-                  ) : (
-                    nearbyReports.map((report, index) => (
+                  </View>
+                  <Text style={[styles.scoreLabel, { color: getSafetyColor(selectedRoute.safety_index) }]}>
+                    Safety Index
+                  </Text>
+                  <Text style={[styles.scoreDetails, { color: colors.textSecondary }]}>
+                    Distance: {(selectedRoute.distance_meters / 1000).toFixed(1)} km • 
+                    Duration: {Math.round(selectedRoute.adjusted_duration_seconds / 60)} min • 
+                    Warnings: {selectedRoute.warnings.length}
+                  </Text>
+                </View>
+
+                {/* Warnings */}
+                {selectedRoute.warnings.length > 0 && (
+                  <>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Warnings</Text>
+                    {selectedRoute.warnings.map((warning, index) => (
                       <View key={index} style={[styles.activityCard, { backgroundColor: colors.surface }]}>
-                        <View style={styles.activityRow}>
-                          <View style={styles.activityLeft}>
-                            <Text style={[styles.activityCategory, { color: colors.text }]}>
-                              Category {report.category_id}
-                            </Text>
+                        <View style={styles.warningRow}>
+                          <View style={[styles.warningDot, { backgroundColor: getSeverityColor(warning.severity) }]} />
+                          <View style={styles.warningContent}>
+                            <Text style={[styles.activityCategory, { color: colors.text }]}>{warning.message}</Text>
                             <Text style={[styles.activityTime, { color: colors.textSecondary }]}>
-                              {formatTimeAgo(report.created_at || '')}
+                              Severity: {warning.severity}/100
                             </Text>
-                          </View>
-                          <View style={styles.activityRight}>
-                            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textSecondary} />
                           </View>
                         </View>
                       </View>
-                    ))
-                  )}
-                </>
-              )}
-            </>
-          )}
-        </View>
-      </Animated.View>
+                    ))}
+                  </>
+                )}
+
+                {/* Nearby Activity */}
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Nearby Activity</Text>
+                {nearbyReports.length === 0 ? (
+                  <View style={[styles.activityCard, { backgroundColor: colors.surface }]}>
+                    <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                      No recent reports in this area
+                    </Text>
+                  </View>
+                ) : (
+                  nearbyReports.map((report, index) => (
+                    <View key={index} style={[styles.activityCard, { backgroundColor: colors.surface }]}>
+                      <View style={styles.activityRow}>
+                        <View style={styles.activityLeft}>
+                          <Text style={[styles.activityCategory, { color: colors.text }]}>
+                            Category {report.category_id}
+                          </Text>
+                          <Text style={[styles.activityTime, { color: colors.textSecondary }]}>
+                            {formatTimeAgo(report.created_at || '')}
+                          </Text>
+                        </View>
+                        <View style={styles.activityRight}>
+                          <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textSecondary} />
+                        </View>
+                      </View>
+                    </View>
+                  ))
+                )}
+              </>
+            )}
+          </View>
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -656,32 +712,22 @@ const styles = StyleSheet.create({
   },
 
   // Find route button
-  startButtonContainer: {
+  fabStartButton: {
     position: 'absolute',
-    bottom: BOTTOM_SHEET_MIN_HEIGHT + 20,
-    left: 20,
+    bottom: BOTTOM_SHEET_MIN_HEIGHT + -5,
     right: 20,
-    zIndex: 10,
-  },
-  startButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#1A73E8',
-    borderRadius: 16,
-    paddingVertical: 18,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
     shadowColor: '#1A73E8',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.5,
     shadowRadius: 12,
-    elevation: 8,
-  },
-  startButtonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 1.5,
+    elevation: 12,
+    zIndex: 10,
   },
 
   // Loading
@@ -902,5 +948,82 @@ const styles = StyleSheet.create({
   },
   warningContent: {
     flex: 1,
+  },
+
+  // Route options cards
+  routeOptionsContainer: {
+    position: 'absolute',
+    bottom: BOTTOM_SHEET_MIN_HEIGHT + 20,
+    left: 0,
+    right: 0,
+    zIndex: 5,
+  },
+  routeOptionsScroll: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  routeCard: {
+    width: 160,
+    borderRadius: 16,
+    padding: 12,
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  recommendedBadge: {
+    position: 'absolute',
+    top: -8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  recommendedText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  routeCardContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  safetyIndicator: {
+    width: 6,
+    height: '100%',
+    borderRadius: 3,
+    minHeight: 60,
+  },
+  routeInfo: {
+    flex: 1,
+  },
+  routeTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  routeSafety: {
+    fontSize: 15,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+  routeDetails: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  routeWarnings: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginTop: 2,
   },
 });
