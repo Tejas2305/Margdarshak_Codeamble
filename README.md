@@ -1,97 +1,100 @@
-# Margdarshak API Tracker
+# 🛡️ Margdarshak — Real-Time Public Safety Navigation Platform
 
-## List 1 — Completed APIs
-
-| API | Status | Taken By |
-|---|---|---|
-| POST /auth/register | Done | Tanishka |
-| POST /auth/login | Done | Tanishka |
-| POST /auth/refresh | Done | Tanishka |
-| POST /auth/logout | Done | Tanishka |
-| GET /users/me | Done | Tanishka |
-| PUT /users/me | Done | Tanishka |
-| DELETE /users/me | Done | Tanishka |
-| PUT /users/change-password | Done | Tanishka |
-
-**8 / 8 done** — Auth + core user profile module.
+**Margdarshak** is a real-time, safety-focused spatial navigation platform. It evaluates travel routes not just by distance or traffic speed, but by **user physical safety**, leveraging police FIR crime statistics, crowdsourced community hazard telemetry, ambient lighting factors, and PostGIS spatial topological analysis.
 
 ---
 
-## List 2 — Pending APIs (by priority)
+## 📚 Core Documentation
 
-### High
-
-| API | Status | Taken By |
-|---|---|---|
-| GET /reports/categories | Done | Tejas |
-| POST /reports/create | Pending | Tejas |
-| POST /reports/upload-photo | Pending | |
-| GET /reports/my-reports *(includes status inline, no separate /status endpoint)* | Pending | |
-| POST /map/route-safety | Pending | |
-
-**1 / 5 done**
-
-### Medium
-
-| API | Status | Taken By |
-|---|---|---|
-| GET /user/emergency-contacts | Done | Tejas |
-| POST /user/emergency-contacts | Done | Tejas |
-| PUT /user/emergency-contacts/ | Done | Tejas |
-| DELETE /user/emergency-contacts/ | Done | Tejas |
-| POST /map/safety-check | Pending | |
-| POST /map/compare-routes | Pending | |
-| GET /map/incidents/nearby *(radius in meters param)* | Pending | |
-| GET /search/places *(OSRM-enabled)* | Pending | |
-| GET /places/safety-score | Pending | |
-| POST /sos/trigger | Done | Tanishka|
-
-**4 / 10 done**
-
-### Least
-
-| API | Status | Taken By |
-|---|---|---|
-| GET /user/safety-score | Pending | |
-| GET /user/safety-trends | Pending | |
-| GET /map/zones | Pending | |
-| GET /sos/history | Done | Tanishka |
-| GET /community/reports | Pending | |
-
-**0 / 5 done**
-
-### Optional (mock or skip for the 3-day hackathon demo, revisit after)
-
-| API | Status | Taken By |
-|---|---|---|
-| POST /auth/send-email-otp | Done | Tanishka |
-| POST /auth/verify-email-otp | Done | Tanishka|
-| POST /auth/send-phone-otp | Done |Tanishka |
-| POST /auth/verify-phone-otp | Done | Tanishka |
-| POST /auth/forgot-password | Done | Tanishka |
-| Google OAuth Login | Pending | |  
-
-**0 / 5 done**
-
-## Explicitly skipped (confirmed, not building)
-
-- POST /sos/notify-contacts-----------------------------------------done-------------tanishka
-- POST /places/rate
-- POST /analytics/track
-- POST /users/upload-profile-photo
-- GET /admin/reports/pending
-- PUT /admin/reports/{id}/status
-- GET /admin/users
-- PUT /admin/users/{id}/block
-- All doc2-only extras: settings, theme/language prefs, notifications, recent-searches, phone verification
+- 📄 **[MARGDARSHAK_PROJECT_DOCUMENTATION.md](file:///e:/Hackathons/Codeamble/Margadarshak/MARGDARSHAK_PROJECT_DOCUMENTATION.md)** — Comprehensive technical design document, PostGIS 1-km stretch algorithms, safety index mathematical equations, DB schemas, and full REST API specifications (ready for PDF export).
+- 📈 **[Progress.md](file:///e:/Hackathons/Codeamble/Margadarshak/Progress.md)** — Live completion progress, verified endpoints matrix, and roadmap.
 
 ---
 
-**Totals:** 13 done (8 auth/profile + 1 high + 4 medium), 20 pending (4 high, 6 medium, 5 least, 5 optional), 13 skipped.
+## ✨ Key Features
 
-## Progress
+1. **Multi-Layer Safety Index**:
+   - **Layer A (Government Data)**: Aggregates historical police crime records (FIRs) and population density.
+   - **Layer B (Community Real-Time)**: Dynamic incident reporting (harassment, unlit streets, accidents) weighted by Reddit-style confidence voting.
+   - **Layer C (Environmental)**: Ambient time-of-day risk adjustments and street lighting scores.
 
-- **Done:** 13 / 33 tracked APIs (~39%)
-- **Days remaining:** 3
-- **Demo-critical path (high + medium, 15 APIs):** 5 / 15 done — this is what to clear first
-- Optional category (5 APIs) can be mocked/hardcoded for the demo without spending build time on real integration
+2. **PostGIS Topological 1-km Road Stretch Traversal**:
+   - Automatically traverses connected road segments (`ST_Touches`, `ST_Union`) to compute continuous 1-kilometer spatial risk profiles.
+
+3. **OSRM Polyline Buffer Hazard Matching**:
+   - Matches live crowdsourced reports against alternate candidate routes using a spatial buffer ($350\text{ m}$) across route GeoJSON polylines.
+
+4. **Dynamic Speed Penalty & ETA Slowdown**:
+   - Calculates safety travel penalties on risky segments, guiding users towards safest routes naturally.
+
+5. **Panic SOS & Emergency Telemetry**:
+   - One-tap SOS trigger with geolocation persistence and saved contact alert routing.
+
+---
+
+## 🛠️ Technology Stack
+
+* **Frontend**: React Native (Expo SDK 52, React Navigation v7, Zustand, React Query, `react-native-maps`).
+* **Backend Framework**: Python FastAPI (AsyncIO asynchronous architecture).
+* **Database**: PostgreSQL with PostGIS Geospatial Extension.
+* **Routing Engine**: OSRM (Open Source Routing Machine).
+* **Caching**: Redis.
+* **Security**: OAuth2 with JWT (RS256/HS256) & Encrypted Storage (Expo SecureStore).
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Prerequisites
+- Python 3.10+
+- Node.js 18+ & npm
+- PostgreSQL with PostGIS enabled
+- OSRM server (or standard fallback mode)
+
+### 2. Backend Setup
+```bash
+cd Backend
+# Install python dependencies
+pip install -r requirements.txt
+
+# Start FastAPI server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+*Backend Swagger API Docs will be available at:* `http://localhost:8000/docs`
+
+### 3. Frontend Setup
+```bash
+cd Frontend/MargdarshakApp
+# Install dependencies
+npm install
+
+# Start Expo dev server
+npm start
+```
+
+---
+
+## 📁 Repository Structure
+
+```
+Margdarshak/
+├── README.md                              # Main repository overview & quickstart
+├── MARGDARSHAK_PROJECT_DOCUMENTATION.md   # Detailed PDF-ready technical documentation
+├── Progress.md                            # Feature completion & API verification tracker
+│
+├── Backend/                               # FastAPI Spatial Intelligence Backend
+│   ├── app/                               # Routers, spatial services, models & schemas
+│   ├── data/                              # Seeding data & geographic Pune centroids
+│   └── requirements.txt                   # Asynchronous Python dependencies
+│
+└── Frontend/                              # React Native Expo Mobile App
+    └── MargdarshakApp/
+        ├── src/                           # Screen components, theme, navigation & API client
+        └── package.json                   # Mobile App dependencies
+```
+
+---
+
+## 🛡️ License
+
+Built with ❤️ for public safety navigation.

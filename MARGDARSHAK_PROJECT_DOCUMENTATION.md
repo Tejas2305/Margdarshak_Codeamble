@@ -252,31 +252,16 @@ This formula mathematically ensures that:
 ```
 Margdarshak/
 ├── MARGDARSHAK_PROJECT_DOCUMENTATION.md   # Comprehensive Project Technical Documentation
-├── PROJECT_CONTEXT.md                     # High-level developer configuration context
-├── Detail.md                              # API implementation tracker & backend status
 ├── README.md                              # Repository overview and quickstart guide
+├── Progress.md                            # Development progress & API verification tracker
 │
 ├── Backend/                               # FastAPI Spatial Intelligence Backend
 │   ├── app/
 │   │   ├── cores/                         # Security, hashing & JWT token verification modules
 │   │   ├── dependencies/                  # FastAPI database session injectors & auth guards
 │   │   ├── models/                        # SQLAlchemy PostGIS spatial data models
-│   │   │   ├── area.py                    # Pune locality spatial area centroids
-│   │   │   ├── fir.py                     # Police official crime record schema
-│   │   │   ├── report.py                  # User crowdsourced incident report schema
-│   │   │   ├── road_segment.py            # PostGIS topological road stretch schema
-│   │   │   └── user.py                    # User authentication & profile schema
 │   │   ├── routers/                       # REST API endpoint route handlers
-│   │   │   ├── auth.py                    # User sign-up, sign-in, and refresh token endpoints
-│   │   │   ├── map.py                     # Route safety, safety checks & incident queries
-│   │   │   ├── reports.py                 # Incident submission & community upvote handlers
-│   │   │   ├── sos.py                     # Emergency SOS trigger and contact alert persistence
-│   │   │   └── users.py                   # User profile & emergency contacts management
 │   │   ├── schemas/                       # Pydantic data validation & GeoJSON spatial DTOs
-│   │   │   ├── auth.py                    # Token & registration validation schemas
-│   │   │   ├── map.py                     # GeoJSON polyline & route safety DTOs
-│   │   │   ├── report.py                  # Report creation & category DTOs
-│   │   │   └── user.py                    # Profile update DTOs
 │   │   ├── services/                      # Business Logic & Mathematical Engines
 │   │   │   ├── scoring_service.py         # Multi-layered risk equations (Layer A, B, C)
 │   │   │   └── spatial_service.py         # PostGIS 1-km topological traversal & OSRM evaluator
@@ -295,10 +280,6 @@ Margdarshak/
         │   ├── contexts/                  # AuthContext & Geolocation tracking providers
         │   ├── navigation/                # React Navigation v7 navigation stacks & tabs
         │   ├── screens/                   # Screen Views (Map, Report, SOS, History, Profile)
-        │   │   ├── auth/                  # Login, Register, Onboarding screens
-        │   │   ├── map/                   # Live Safety Map & Navigation screen
-        │   │   ├── reports/               # Submit Incident & Community feed screens
-        │   │   └── sos/                   # Panic SOS & Emergency Contacts screen
         │   ├── services/                  # Axios REST API client & Geolocation handlers
         │   └── theme/                     # Dark mode theme design tokens, colors & fonts
         ├── android/                       # Native Android build configurations & permissions
