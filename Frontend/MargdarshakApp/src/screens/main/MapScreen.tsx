@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   // Search bar - CLEAN GOOGLE MAPS STYLE (HIGHER POSITION)
   searchContainer: {
     position: 'absolute',
-    top: 38,
+    top: 40,
     left: 12,
     right: 70,
     zIndex: 10,

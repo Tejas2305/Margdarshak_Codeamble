@@ -368,26 +368,6 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Privacy & Safety */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Privacy & Safety</Text>
-
-          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-                <MaterialCommunityIcons name="bell-outline" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, { color: colors.text }]}>Notifications</Text>
-                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                  Receive safety alerts and updates
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={notifications}
-              onValueChange={setNotifications}
-              trackColor={{ false: colors.border, true: colors.primary + '60' }}
-              thumbColor={notifications ? colors.primary : '#f4f3f4'}
-            />
-          </View>
         </View>
 
         {/* Emergency Contacts */}
@@ -401,47 +381,6 @@ export default function SettingsScreen({ navigation }: any) {
               <MaterialCommunityIcons name="account-group" size={20} color={colors.primary} />
             </View>
             <Text style={[styles.menuText, { color: colors.text }]}>Manage Emergency Contacts</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Data & Privacy */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Data & Privacy</Text>
-
-          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-                <MaterialCommunityIcons name="database-outline" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, { color: colors.text }]}>Share Anonymous Data</Text>
-                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                  Help improve safety for everyone
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={shareData}
-              onValueChange={setShareData}
-              trackColor={{ false: colors.border, true: colors.primary + '60' }}
-              thumbColor={shareData ? colors.primary : '#f4f3f4'}
-            />
-          </View>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="shield-lock-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Privacy Policy</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="file-document-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Terms of Service</Text>
             <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
           </TouchableOpacity>
         </View>
@@ -480,15 +419,6 @@ export default function SettingsScreen({ navigation }: any) {
             </View>
             <Text style={[styles.menuText, { color: colors.text }]}>Language</Text>
             <Text style={[styles.menuValue, { color: colors.textSecondary }]}>English</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="database" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Storage</Text>
-            <Text style={[styles.menuValue, { color: colors.textSecondary }]}>128 MB</Text>
             <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
           </TouchableOpacity>
         </View>
