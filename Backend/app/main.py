@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -11,7 +12,18 @@ from app.routers.emergency_contacts import router as emergency_contacts_router
 from app.routers.map import router as map_router
 import app.models  # noqa: F401
 from app.routers.sos import router as sos_router
+
 app = FastAPI(title="Margadarshak")
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for development (restrict in production)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
 app.include_router(sos_router)
 
 @app.on_event("startup")

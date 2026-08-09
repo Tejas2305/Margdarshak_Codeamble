@@ -20,8 +20,12 @@
         "backgroundColor": "#0A0E27",
         "foregroundImage": "./assets/icon.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.MargdarshakApp"
+      "package": "com.anonymous.MargdarshakApp",
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_ANDROID_API_KEY"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,7 +40,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#0A0E27"
         }
-      ]
+      ],
+      "expo-asset"
     ]
   }
 }
