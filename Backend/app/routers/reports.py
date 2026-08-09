@@ -220,7 +220,7 @@ async def create_report(
 
     await recalculate_dirty_segments(db)
 
-    await trigger_debounced_osrm_update()
+    trigger_debounced_osrm_update()
 
     # -----------------------------------
     # 10. Return response
@@ -301,7 +301,7 @@ async def vote_report(
     await db.refresh(report)
 
     await recalculate_dirty_segments(db)
-    await trigger_debounced_osrm_update()
+    trigger_debounced_osrm_update()
 
     return VoteResponse(
         report_id=report.report_id,

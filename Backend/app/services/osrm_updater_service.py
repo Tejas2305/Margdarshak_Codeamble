@@ -1,5 +1,6 @@
 import asyncio
 import os
+from pathlib import Path
 import psycopg2
 import httpx
 from datetime import datetime
@@ -17,12 +18,22 @@ from app.config import (
     DB_PASSWORD,
     OSRM_UPDATE_DEBOUNCE_SECONDS,
     OSRM_FILE_PATH,
+    OSRM_DATASET_NAME,
     OSRM_SPEED_CSV_PATH,
     ENABLE_OSRM_SUBPROCESS_CUSTOMIZE,
 )
 
 _update_pending: bool = False
 _datastore_lock = asyncio.Lock()
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _resolve_dataset_name(file_path: str) -> str:
+    if OSRM_DATASET_NAME:
+        return OSRM_DATASET_NAME
+    if file_path:
+        return Path(file_path).stem
+    return "osrm"
 
 
 def log_event(message: str):
@@ -187,7 +198,7 @@ async def export_speed_csv(db: AsyncSession, csv_path: str = OSRM_SPEED_CSV_PATH
     return written_lines
 
 
-async def trigger_debounced_osrm_update():
+def trigger_debounced_osrm_update():
     """
     Triggers debounced OSRM update task.
     First event starts a coalescing window (default 30 seconds from .env).
@@ -198,7 +209,57 @@ async def trigger_debounced_osrm_update():
         return  # Event coalesced into existing queued run
 
     _update_pending = True
-    asyncio.create_task(_run_update_pipeline())
+    task = asyncio.create_task(_run_update_pipeline())
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+
+
+async def _run_osrm_datastore(args: list[str]) -> tuple[int, str]:
+    proc = await asyncio.create_subprocess_exec(
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    output = (stdout.decode() + "\n" + stderr.decode()).strip()
+    return proc.returncode, output
+
+
+async def _load_osrm_dataset(file_path: str, dataset_name: str) -> None:
+    metric_args = [
+        "osrm-datastore",
+        f"--dataset-name={dataset_name}",
+        "--only-metric=true",
+        file_path,
+    ]
+    return_code, output = await _run_osrm_datastore(metric_args)
+    if output:
+        log_event(f"[osrm-datastore output]\n{output}")
+
+    if return_code == 0:
+        log_event(
+            f"[OSRM Updater] osrm-datastore refreshed shared-memory metric for dataset '{dataset_name}' with return code 0"
+        )
+        return
+
+    if "does not exist yet" in output:
+        log_event(
+            f"[OSRM Updater] Shared-memory dataset '{dataset_name}' does not exist yet. Bootstrapping full datastore load..."
+        )
+        bootstrap_args = [
+            "osrm-datastore",
+            f"--dataset-name={dataset_name}",
+            file_path,
+        ]
+        bootstrap_code, bootstrap_output = await _run_osrm_datastore(bootstrap_args)
+        if bootstrap_output:
+            log_event(f"[osrm-datastore bootstrap output]\n{bootstrap_output}")
+        log_event(
+            f"[OSRM Updater] osrm-datastore bootstrap finished with return code {bootstrap_code}"
+        )
+        return
+
+    log_event(f"[OSRM Updater] osrm-datastore finished with return code {return_code}")
 
 
 async def _run_update_pipeline():
@@ -219,10 +280,11 @@ async def _run_update_pipeline():
 
         file_path = os.path.abspath(OSRM_FILE_PATH) if OSRM_FILE_PATH else ""
         csv_path_abs = os.path.abspath(OSRM_SPEED_CSV_PATH) if OSRM_SPEED_CSV_PATH else ""
+        dataset_name = _resolve_dataset_name(file_path)
 
         log_event(f"[OSRM Updater] Pipeline execution completed. Dirty segments updated: {updated_count}, CSV records: {csv_lines}.")
 
-        # 3. Hot-swap OSRM memory metric if enabled or OSRM file exists
+        # 3. Hot-swap OSRM shared-memory metric if enabled or OSRM file exists
         if ENABLE_OSRM_SUBPROCESS_CUSTOMIZE or (file_path and os.path.exists(file_path)):
             try:
                 log_event(f"[OSRM Updater] Executing osrm-customize on '{file_path}' using '--segment-speed-file {csv_path_abs}'...")
@@ -240,18 +302,9 @@ async def _run_update_pipeline():
                     log_event(f"[osrm-customize output]\n{out1_str}")
                 log_event(f"[OSRM Updater] osrm-customize finished with return code {proc1.returncode}")
 
-                log_event(f"[OSRM Updater] Executing osrm-datastore --only-metric=true on '{file_path}'...")
-                proc2 = await asyncio.create_subprocess_exec(
-                    "osrm-datastore",
-                    "--only-metric=true",
-                    file_path,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
+                log_event(
+                    f"[OSRM Updater] Executing osrm-datastore for shared-memory dataset '{dataset_name}' on '{file_path}'..."
                 )
-                stdout2, stderr2 = await proc2.communicate()
-                out2_str = (stdout2.decode() + "\n" + stderr2.decode()).strip()
-                if out2_str:
-                    log_event(f"[osrm-datastore output]\n{out2_str}")
-                log_event(f"[OSRM Updater] osrm-datastore finished with return code {proc2.returncode}")
+                await _load_osrm_dataset(file_path, dataset_name)
             except Exception as e:
                 log_event(f"[OSRM Subprocess Error] {e}")
