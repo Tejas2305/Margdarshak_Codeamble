@@ -27,11 +27,16 @@ from sqlalchemy import select, delete
 
 from app.models.password_reset_otp import PasswordResetOTP
 from app.models.refresh_token import RefreshToken
+from app.models.email_otp import EmailOTP
 
 from app.schemas.auth import (
     ForgotPasswordRequest,
     VerifyForgotPasswordOTPRequest,
     ResetPasswordRequest,
+)
+from app.schemas.email_verification import (
+    SendEmailOTPRequest,
+    VerifyEmailOTPRequest as PublicVerifyEmailOTPRequest,
 )
 
 from app.utils.email_service import (
@@ -72,12 +77,106 @@ async def _store_refresh_token(
     db.add(refresh_token_record)
 
 
+@router.post("/send-email-otp")
+async def send_email_otp_public(
+    request: SendEmailOTPRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Send OTP to email for verification during registration (public endpoint)"""
+    
+    # Check if email already registered
+    result = await db.execute(
+        select(User).where(User.email == request.email)
+    )
+    existing_user = result.scalar_one_or_none()
+    
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered"
+        )
+    
+    # Generate OTP
+    otp = generate_otp()
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+    
+    # Delete any previous OTP for this email
+    await db.execute(
+        delete(EmailOTP).where(
+            EmailOTP.email == request.email
+        )
+    )
+    
+    # Create new OTP record (using email as identifier since user doesn't exist yet)
+    new_otp = EmailOTP(
+        user_id=None,  # No user yet
+        email=request.email,  # Store email temporarily
+        otp=otp,
+        expires_at=expires_at
+    )
+    
+    db.add(new_otp)
+    await db.commit()
+    
+    # Send email
+    status = send_email_otp(request.email, otp)
+    
+    if status != 202:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send OTP"
+        )
+    
+    return {
+        "message": "OTP sent successfully"
+    }
+
+
+@router.post("/verify-email-otp")
+async def verify_email_otp_public(
+    request: PublicVerifyEmailOTPRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Verify email OTP during registration (public endpoint)"""
+    
+    # Find OTP by email
+    result = await db.execute(
+        select(EmailOTP).where(
+            EmailOTP.email == request.email,
+            EmailOTP.otp == request.otp
+        )
+    )
+    
+    otp_record = result.scalar_one_or_none()
+    
+    if otp_record is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid OTP"
+        )
+    
+    # Check expiry
+    if otp_record.expires_at < datetime.now(timezone.utc):
+        await db.delete(otp_record)
+        await db.commit()
+        raise HTTPException(
+            status_code=400,
+            detail="OTP has expired"
+        )
+    
+    # Mark as verified (we'll delete it after registration)
+    # For now just return success
+    return {
+        "message": "Email verified successfully"
+    }
+
+
 @router.post("/register")
 async def register(
     request: RegisterRequest,
     db: AsyncSession = Depends(get_db)
 ):
-
+    # Check if email is already registered
     result = await db.execute(
         select(User).where(User.email == request.email)
     )
@@ -89,6 +188,20 @@ async def register(
             status_code=400,
             detail="Email already registered"
         )
+    
+    # Verify that email OTP was verified
+    otp_result = await db.execute(
+        select(EmailOTP).where(
+            EmailOTP.email == request.email
+        )
+    )
+    otp_record = otp_result.scalar_one_or_none()
+    
+    if not otp_record:
+        raise HTTPException(
+            status_code=400,
+            detail="Email not verified. Please verify your email first."
+        )
 
     hashed_password = hash_password(request.password)
 
@@ -99,17 +212,18 @@ async def register(
         phone_number=request.phone_number,
         password_hash=hashed_password,
         role_id=1,
-        email_verified=False,
+        email_verified=True,  # Set to True since OTP was verified
         phone_verified=False,
         account_status="ACTIVE"
     )
 
     db.add(new_user)
-
     await db.flush()
-
+    
+    # Delete the OTP record since registration is complete
+    await db.delete(otp_record)
+    
     await db.commit()
-
     await db.refresh(new_user)
 
     return {

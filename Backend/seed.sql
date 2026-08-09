@@ -61,10 +61,10 @@ CREATE TABLE public.refresh_tokens (
     is_revoked boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
-
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS profile_picture VARCHAR(500);
 
 ALTER TABLE public.refresh_tokens OWNER TO postgres;
-
 --
 -- Name: refresh_tokens_token_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --

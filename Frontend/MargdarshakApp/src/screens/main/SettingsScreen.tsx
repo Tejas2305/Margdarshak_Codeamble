@@ -12,6 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeColors } from '../../theme';
 import { authService, userService } from '../../services/api';
@@ -22,9 +23,6 @@ export default function SettingsScreen({ navigation }: any) {
   const colors = getThemeColors(isDark);
   
   const [notifications, setNotifications] = useState(true);
-  const [locationTracking, setLocationTracking] = useState(true);
-  const [nightMode, setNightMode] = useState(false);
-  const [autoAlert, setAutoAlert] = useState(false);
   const [shareData, setShareData] = useState(true);
   const [profile, setProfile] = useState<User | null>(null);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
@@ -36,6 +34,13 @@ export default function SettingsScreen({ navigation }: any) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
+
+  // Profile edit states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -123,6 +128,76 @@ export default function SettingsScreen({ navigation }: any) {
       );
     } else {
       setShowPhoneModal(true);
+    }
+  };
+
+  const handleEditProfile = () => {
+    if (profile) {
+      setEditFirstName(profile.first_name);
+      setEditLastName(profile.last_name);
+      setEditEmail(profile.email);
+    }
+    setShowEditModal(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editFirstName.trim() || !editLastName.trim()) {
+      Alert.alert('Missing Details', 'Please enter both first and last name.');
+      return;
+    }
+
+    try {
+      setIsSavingProfile(true);
+      await userService.updateProfile({
+        first_name: editFirstName.trim(),
+        last_name: editLastName.trim(),
+      });
+      Alert.alert('Success', 'Profile updated successfully!');
+      setShowEditModal(false);
+      await loadProfile();
+    } catch (error: any) {
+      Alert.alert('Update Failed', error?.response?.data?.detail || 'Unable to update profile.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleProfilePictureUpload = async () => {
+    try {
+      // Request media library permissions
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('Permission Required', 'Please allow access to your photo library to upload a profile picture.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      // Upload the image
+      const imageUri = result.assets[0].uri;
+      await userService.uploadProfilePicture(imageUri);
+      
+      Alert.alert('Success', 'Profile picture updated successfully!');
+      
+      // Reload profile to get updated data
+      await loadProfile();
+    } catch (error: any) {
+      console.error('Profile picture upload error:', error);
+      Alert.alert(
+        'Upload Failed',
+        error?.response?.data?.detail || 'Unable to upload profile picture. Please try again.'
+      );
     }
   };
 
@@ -240,15 +315,20 @@ export default function SettingsScreen({ navigation }: any) {
       >
         {/* Profile Section */}
         <View style={dynamicStyles.profileCard}>
-          <View style={dynamicStyles.avatar}>
-            <Text style={styles.avatarText}>{profileInitials}</Text>
-          </View>
+          <TouchableOpacity onPress={handleProfilePictureUpload} style={styles.avatarContainer}>
+            <View style={dynamicStyles.avatar}>
+              <Text style={styles.avatarText}>{profileInitials}</Text>
+            </View>
+            <View style={[styles.cameraIcon, { backgroundColor: colors.primary }]}>
+              <MaterialCommunityIcons name="camera-plus" size={16} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
           <View style={styles.profileInfo}>
             <Text style={dynamicStyles.profileName}>{profileName}</Text>
             <Text style={dynamicStyles.profileEmail}>{profileEmail}</Text>
           </View>
-          <TouchableOpacity style={dynamicStyles.editButton}>
-            <Text style={dynamicStyles.editIcon}>✏</Text>
+          <TouchableOpacity style={dynamicStyles.editButton} onPress={handleEditProfile}>
+            <MaterialCommunityIcons name="pencil" size={18} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -288,137 +368,19 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Privacy & Safety */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Privacy & Safety</Text>
-
-          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-                <MaterialCommunityIcons name="bell-outline" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, { color: colors.text }]}>Notifications</Text>
-                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                  Receive safety alerts and updates
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={notifications}
-              onValueChange={setNotifications}
-              trackColor={{ false: colors.border, true: colors.primary + '60' }}
-              thumbColor={notifications ? colors.primary : '#f4f3f4'}
-            />
-          </View>
-
-          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-                <MaterialCommunityIcons name="map-marker-radius" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, { color: colors.text }]}>Location Tracking</Text>
-                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                  Share location for safety monitoring
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={locationTracking}
-              onValueChange={setLocationTracking}
-              trackColor={{ false: colors.border, true: colors.primary + '60' }}
-              thumbColor={locationTracking ? colors.primary : '#f4f3f4'}
-            />
-          </View>
-
-          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-                <MaterialCommunityIcons name="moon-waning-crescent" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, { color: colors.text }]}>Night Mode Alerts</Text>
-                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                  Extra safety alerts after dark
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={nightMode}
-              onValueChange={setNightMode}
-              trackColor={{ false: colors.border, true: colors.primary + '60' }}
-              thumbColor={nightMode ? colors.primary : '#f4f3f4'}
-            />
-          </View>
-
-          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-                <MaterialCommunityIcons name="alert-octagon" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, { color: colors.text }]}>Auto Emergency Alert</Text>
-                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                  Auto-trigger SOS in dangerous areas
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={autoAlert}
-              onValueChange={setAutoAlert}
-              trackColor={{ false: colors.border, true: colors.primary + '60' }}
-              thumbColor={autoAlert ? colors.primary : '#f4f3f4'}
-            />
-          </View>
         </View>
 
         {/* Emergency Contacts */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Emergency Contacts</Text>
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <TouchableOpacity 
+            style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('EmergencyContacts')}
+          >
             <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
               <MaterialCommunityIcons name="account-group" size={20} color={colors.primary} />
             </View>
             <Text style={[styles.menuText, { color: colors.text }]}>Manage Emergency Contacts</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Data & Privacy */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Data & Privacy</Text>
-
-          <View style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-                <MaterialCommunityIcons name="database-outline" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingTextContainer}>
-                <Text style={[styles.settingTitle, { color: colors.text }]}>Share Anonymous Data</Text>
-                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                  Help improve safety for everyone
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={shareData}
-              onValueChange={setShareData}
-              trackColor={{ false: colors.border, true: colors.primary + '60' }}
-              thumbColor={shareData ? colors.primary : '#f4f3f4'}
-            />
-          </View>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="shield-lock-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Privacy Policy</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="file-document-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Terms of Service</Text>
             <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
           </TouchableOpacity>
         </View>
@@ -457,52 +419,6 @@ export default function SettingsScreen({ navigation }: any) {
             </View>
             <Text style={[styles.menuText, { color: colors.text }]}>Language</Text>
             <Text style={[styles.menuValue, { color: colors.textSecondary }]}>English</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="database" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Storage</Text>
-            <Text style={[styles.menuValue, { color: colors.textSecondary }]}>128 MB</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* About */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="information-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>App Version</Text>
-            <Text style={[styles.menuValue, { color: colors.textSecondary }]}>1.0.0</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="star-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Rate Us</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="message-alert-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Send Feedback</Text>
-            <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '15' }]}>
-              <MaterialCommunityIcons name="help-circle-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuText, { color: colors.text }]}>Help & Support</Text>
             <Text style={[styles.menuArrow, { color: colors.textSecondary }]}>→</Text>
           </TouchableOpacity>
         </View>
@@ -625,6 +541,79 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => {
+          setShowEditModal(false);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowEditModal(false);
+                }}
+              >
+                <MaterialCommunityIcons name="close" size={24} color="#333333" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalDescription}>
+              Update your profile information
+            </Text>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>First Name</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter first name"
+                placeholderTextColor="#999999"
+                value={editFirstName}
+                onChangeText={setEditFirstName}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Last Name</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter last name"
+                placeholderTextColor="#999999"
+                value={editLastName}
+                onChangeText={setEditLastName}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <TextInput
+                style={[styles.textInput, styles.textInputDisabled]}
+                value={editEmail}
+                editable={false}
+              />
+              <Text style={styles.inputHint}>Email cannot be changed</Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.modalButton, (!editFirstName.trim() || !editLastName.trim()) && styles.modalButtonDisabled]}
+              onPress={handleSaveProfile}
+              disabled={!editFirstName.trim() || !editLastName.trim() || isSavingProfile}
+            >
+              <Text style={styles.modalButtonText}>{isSavingProfile ? 'Saving...' : 'Save Changes'}</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.modalFooter}>
+              Changes will be saved immediately
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -686,6 +675,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 16,
+  },
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   profileInfo: {
     flex: 1,
@@ -914,5 +919,35 @@ const styles = StyleSheet.create({
     color: '#999999',
     textAlign: 'center',
     marginTop: 16,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#333333',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  textInputDisabled: {
+    backgroundColor: '#F0F0F0',
+    color: '#999999',
+  },
+  inputHint: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#999999',
+    marginTop: 6,
   },
 });

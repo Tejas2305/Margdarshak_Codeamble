@@ -1,3 +1,4 @@
+
 // API Request/Response Types
 
 // Auth Types
@@ -90,6 +91,19 @@ export interface ChangePasswordResponse {
   message: string;
 }
 
+export interface SendOTPRequest {
+  phone_number: string;
+}
+
+export interface VerifyOTPRequest {
+  phone_number: string;
+  otp: string;
+}
+
+export interface VerifyEmailOTPRequest {
+  otp: string;
+}
+
 // Emergency Contact Types
 export interface EmergencyContact {
   contact_id: number;
@@ -105,7 +119,7 @@ export interface EmergencyContactCreate {
 export interface EmergencyContactUpdate {
   contact_id: number;
   name?: string;
-  phone_number?: string;
+  phone_number: string;
 }
 
 export interface EmergencyContactResponse {
@@ -155,6 +169,10 @@ export interface VoteResponse {
   message: string;
 }
 
+export interface VoteRequest {
+  vote_type: number;
+}
+
 // Map Types
 export interface LocationPoint {
   lat: number;
@@ -182,13 +200,41 @@ export interface RouteSafetyOption {
   average_risk_score: number;
   safety_index: number;
   is_safest: boolean;
-  warnings: string[];
+  warnings: Warning[];
   geometry?: Record<string, unknown> | null;
+}
+
+export interface Warning {
+  latitude: number;
+  longitude: number;
+  message: string;
+  severity: number;
 }
 
 export interface RouteSafetyResponse {
   routes: RouteSafetyOption[];
   recommended_route_index: number;
+}
+
+// Frontend-only synthesized warning with coordinates (derived from route geometry)
+export interface SynthesizedWarning {
+  latitude: number;
+  longitude: number;
+  message: string;
+  severity: 'high' | 'medium' | 'low';
+}
+
+export interface PlaceResult {
+  name: string;
+  lat: number;
+  lng: number;
+  place_id?: string | null;
+  address?: string | null;
+}
+
+export interface SearchPlaceResponse {
+  query: string;
+  results: PlaceResult[];
 }
 
 // SOS Types
@@ -220,6 +266,11 @@ export interface SosHistoryItem {
 
 export interface MessageResponse {
   message: string;
+}
+
+export interface RootResponse {
+  message?: string;
+  [key: string]: unknown;
 }
 
 // Generic API Response

@@ -13,6 +13,7 @@ class ReportCreate(BaseModel):
 
 class ReportResponse(BaseModel):
     report_id: int
+    incident_image: str | None = None
     user_id: int
     category_id: int
     category_name: Optional[str] = None

@@ -20,6 +20,24 @@ class RouteSafetyRequest(BaseModel):
     destination: LocationPoint
 
 
+class WarningItem(BaseModel):
+    message: str
+    severity: int
+    latitude: float
+    longitude: float
+
+
+class SearchResultItem(BaseModel):
+    name: str
+    lat: float
+    lng: float
+
+
+class SearchResponse(BaseModel):
+    query: str
+    results: List[SearchResultItem]
+
+
 class RouteSafetyOption(BaseModel):
     route_index: int
     distance_meters: float
@@ -28,10 +46,30 @@ class RouteSafetyOption(BaseModel):
     average_risk_score: float
     safety_index: float
     is_safest: bool
-    warnings: List[str]
+    warnings: List[WarningItem]
     geometry: Optional[Dict[str, Any]] = None
 
 
 class RouteSafetyResponse(BaseModel):
     routes: List[RouteSafetyOption]
     recommended_route_index: int
+
+
+class PlaceResult(BaseModel):
+    name: str
+    lat: float
+    lng: float
+    place_id: Optional[str] = None
+    address: Optional[str] = None
+
+
+class SearchPlaceRequest(BaseModel):
+    query: str
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    limit: int = 10
+
+
+class SearchPlaceResponse(BaseModel):
+    query: str
+    results: List[PlaceResult]
