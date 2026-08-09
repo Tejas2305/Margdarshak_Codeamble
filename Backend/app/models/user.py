@@ -25,7 +25,7 @@ class User(Base):
     google_id=Column(String(100),unique=True)
     login_provider = Column(String(20), default="LOCAL")
     date_of_birth = Column(Date)
-    profile_photo_url = Column(Text)
+    profile_picture = Column(String(500), nullable=True)
     role_id = Column(
     Integer,
     ForeignKey("roles.role_id")

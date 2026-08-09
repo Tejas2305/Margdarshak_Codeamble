@@ -31,6 +31,7 @@ class Report(Base):
     downvotes = Column(Integer, default=0, nullable=False)
     confidence_score = Column(Float, default=0.5, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    incident_image = Column(String(500), nullable=True)
     updated_at = Column(
         TIMESTAMP(timezone=True),
         server_default=func.now(),

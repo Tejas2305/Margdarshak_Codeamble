@@ -11,14 +11,13 @@ from app.schemas.map import (
     SpeedLimitResponse,
     RouteSafetyRequest,
     RouteSafetyResponse,
-    SearchPlaceRequest,
-    SearchPlaceResponse,
-    PlaceResult,
+    SearchResponse,
 )
 from app.utils.auth import get_current_user
 from app.services.spatial_service import (
     find_nearest_road_segment,
     evaluate_osrm_routes,
+    search_places,
 )
 
 router = APIRouter(
@@ -55,6 +54,16 @@ async def get_speed_limit(
         updated_speed_kmh=segment.updated_speed_kmh,
         risk_score=segment.risk_score
     )
+
+
+@router.get("/search", response_model=SearchResponse)
+async def search_location(
+    query: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    results = await search_places(query)
+    return SearchResponse(query=query, results=results)
 
 
 @router.post("/route-safety", response_model=RouteSafetyResponse)
