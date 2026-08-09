@@ -19,7 +19,7 @@ import {
   testGetEmergencyContacts,
   testLogout,
   runAllTests,
-} from '../services/api/__tests__/apiTest';
+} from '../services/api/apiTest';
 
 interface TestResult {
   success: boolean;

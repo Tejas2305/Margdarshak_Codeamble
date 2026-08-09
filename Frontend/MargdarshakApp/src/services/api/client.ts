@@ -1,15 +1,15 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { API_BASE_URL } from '@env';
 
 const normalizeBaseUrl = (url?: string) => {
-  const fallbackUrl = 'http://localhost:8000';
-  const baseUrl = (url || fallbackUrl).replace(/\/+$/, '');
+  const fallbackUrl = 'https://university-likewise-duck-integral.trycloudflare.com';
+  const baseUrl = (url || fallbackUrl).replace(/\/+$/, '').replace('/openapi.json', '');
 
   return baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
 };
 
-// Use hardcoded URL for development bypass mode
-const BASE_URL = normalizeBaseUrl('http://localhost:8000');
+const BASE_URL = normalizeBaseUrl(API_BASE_URL);
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -23,6 +23,8 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor - Add auth token
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    
     const token = await SecureStore.getItemAsync('access_token');
     
     if (token && config.headers) {
@@ -32,15 +34,28 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
 // Response interceptor - Handle token refresh
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    // Log the error
+    if (error.response) {
+      console.error(`❌ API Error: ${error.response.status} ${error.config?.url}`, error.response.data);
+    } else if (error.request) {
+      console.error('❌ Network Error: No response received', error.message);
+    } else {
+      console.error('❌ Request Error:', error.message);
+    }
 
     // If 401 and we haven't retried yet, try to refresh token
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -70,6 +85,7 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
+        console.error('❌ Token refresh failed:', refreshError);
         // Refresh failed, clear tokens and redirect to login
         await SecureStore.deleteItemAsync('access_token');
         await SecureStore.deleteItemAsync('refresh_token');
@@ -83,3 +99,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+export { BASE_URL };

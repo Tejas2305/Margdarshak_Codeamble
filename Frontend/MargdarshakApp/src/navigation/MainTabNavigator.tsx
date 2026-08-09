@@ -61,8 +61,7 @@ export default function MainTabNavigator() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopWidth: 0,
           height: 72,
           paddingBottom: 8,
           paddingTop: 8,

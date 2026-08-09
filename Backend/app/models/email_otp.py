@@ -12,8 +12,10 @@ class EmailOTP(Base):
     user_id = Column(
         Integer,
         ForeignKey("users.user_id", ondelete="CASCADE"),
-        nullable=False
+        nullable=True  # Allow null for pre-registration verification
     )
+    
+    email = Column(String(255), nullable=True, index=True)  # Store email for pre-registration
 
     otp = Column(String(6), nullable=False)
 

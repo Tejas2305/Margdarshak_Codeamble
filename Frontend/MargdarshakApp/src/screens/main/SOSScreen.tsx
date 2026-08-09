@@ -6,19 +6,30 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
+  Pressable,
+  ScrollView,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { 
+  Phone, 
+  Ambulance, 
+  Flame, 
+  MapPin, 
+  Users, 
+  Clock,
+  Check
+} from 'lucide-react-native';
+import { Card } from '../../components';
 import { useTheme } from '../../contexts/ThemeContext';
-import { getThemeColors } from '../../theme';
+import { getTheme } from '../../theme/theme';
 import { sosService } from '../../services/api';
 
 const emergencyNumbers = [
-  { name: 'Police', number: '100' },
-  { name: 'Medical', number: '102' },
-  { name: 'Fire', number: '101' },
+  { name: 'Police', number: '100', icon: Phone },
+  { name: 'Medical', number: '102', icon: Ambulance },
+  { name: 'Fire', number: '101', icon: Flame },
 ];
 
 const DEFAULT_LOCATION = {
@@ -26,64 +37,52 @@ const DEFAULT_LOCATION = {
   longitude: 73.8567,
 };
 
-export default function SOSScreen() {
+const BUTTON_SIZE = 200;
+
+export default function SOSScreen({ navigation }: any) {
   const { isDark } = useTheme();
-  const colors = getThemeColors(isDark);
+  const theme = getTheme(isDark);
 
-  const [isActivated, setIsActivated] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [countdown, setCountdown] = useState(5);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  
+  // Pulsing outer ring animation
+  const pulseScale = useRef(new Animated.Value(1)).current;
+  const pulseOpacity = useRef(new Animated.Value(1)).current;
 
+  // Pulsing animation loop
   useEffect(() => {
     const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.08,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(pulseScale, {
+            toValue: 1.4,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseScale, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(pulseOpacity, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseOpacity, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ]),
       ])
     );
 
     animation.start();
     return () => animation.stop();
-  }, [pulseAnim]);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    if (isActivated && countdown > 0) {
-      timer = setTimeout(() => setCountdown((value) => value - 1), 1000);
-    } else if (isActivated && countdown === 0 && !isSending) {
-      triggerEmergency();
-    }
-
-    return () => clearTimeout(timer);
-  }, [isActivated, countdown, isSending]);
-
-  const handleSOSPress = () => {
-    Alert.alert('Activate Emergency Alert?', 'This will notify your emergency contacts.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Activate',
-        style: 'destructive',
-        onPress: () => {
-          setIsActivated(true);
-          setCountdown(5);
-        },
-      },
-    ]);
-  };
-
-  const cancelSOS = () => {
-    setIsActivated(false);
-    setCountdown(5);
-  };
+  }, []);
 
   const resolveLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -99,8 +98,11 @@ export default function SOSScreen() {
   };
 
   const triggerEmergency = async () => {
+    if (isSending) return;
+    
     try {
       setIsSending(true);
+      
       const currentLocation = await resolveLocation();
       const response = await sosService.trigger({
         latitude: currentLocation.latitude,
@@ -109,19 +111,13 @@ export default function SOSScreen() {
         battery_percentage: null,
       });
 
-      Alert.alert('Emergency Alert Sent', `${response.message}\n\nLocation: ${response.google_maps_url}`, [
-        {
-          text: 'OK',
-          onPress: () => {
-            setIsActivated(false);
-            setCountdown(5);
-          },
-        },
-      ]);
+      Alert.alert(
+        'Emergency Alert Sent', 
+        `${response.message}\n\nLocation: ${response.google_maps_url}`, 
+        [{ text: 'OK' }]
+      );
     } catch (error: any) {
       Alert.alert('SOS Failed', error?.response?.data?.detail || 'Unable to send SOS right now.');
-      setIsActivated(false);
-      setCountdown(5);
     } finally {
       setIsSending(false);
     }
@@ -138,78 +134,147 @@ export default function SOSScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={[theme.typography.heading1, { color: theme.colors.textPrimary }]}>
+              Emergency SOS
+            </Text>
+            <Text style={[theme.typography.body, { color: theme.colors.textSecondary, marginTop: theme.spacing.xs }]}>
+              {isSending ? 'Sending alert...' : 'Tap to activate emergency alert'}
+            </Text>
+          </View>
 
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Emergency SOS</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            {isActivated ? 'Activating emergency response' : 'Press button to activate emergency alert'}
-          </Text>
-        </View>
+          {/* SOS Button with Pulsing Ring */}
+          <View style={styles.sosContainer}>
+            {/* Pulsing Outer Ring */}
+            <Animated.View
+              style={[
+                styles.pulseRing,
+                {
+                  backgroundColor: theme.colors.danger,
+                  transform: [{ scale: pulseScale }],
+                  opacity: pulseOpacity,
+                },
+              ]}
+            />
 
-        <View style={styles.content}>
-          {isActivated ? (
-            <View style={styles.countdownContainer}>
-              <Text style={[styles.countdownLabel, { color: colors.text }]}>
-                {isSending ? 'Sending alert' : 'Activating in'}
+            {/* Main SOS Button */}
+            <Pressable
+              onPress={triggerEmergency}
+              disabled={isSending}
+              style={[
+                styles.sosButton,
+                { 
+                  backgroundColor: theme.colors.danger,
+                  opacity: isSending ? 0.6 : 1,
+                },
+                theme.shadows.xl,
+              ]}
+            >
+              <Text style={styles.sosText}>SOS</Text>
+              <Text style={styles.sosSubtext}>
+                {isSending ? 'Sending...' : 'Tap to Send'}
               </Text>
-              <Text style={styles.countdownNumber}>{isSending ? '...' : countdown}</Text>
-              {!isSending && (
-                <TouchableOpacity
-                  style={[styles.cancelButton, { backgroundColor: colors.surface, borderColor: '#E85D5D' }]}
-                  onPress={cancelSOS}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ) : (
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <TouchableOpacity style={styles.sosButton} onPress={handleSOSPress} activeOpacity={0.9}>
-                <Text style={styles.sosText}>SOS</Text>
-                <Text style={styles.sosSubtext}>Press & Hold</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
-        </View>
+            </Pressable>
+          </View>
 
-        {!isActivated && (
-          <View style={styles.quickActions}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Call</Text>
-            <View style={styles.actionsGrid}>
-              {emergencyNumbers.map((service) => (
-                <TouchableOpacity
-                  key={service.number}
-                  style={[styles.actionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                  onPress={() => callNumber(service.number, service.name)}
-                >
-                  <Text style={[styles.actionName, { color: colors.text }]}>{service.name}</Text>
-                  <Text style={styles.actionNumber}>{service.number}</Text>
-                </TouchableOpacity>
-              ))}
+          {/* Quick Call Cards */}
+          <View style={styles.section}>
+            <Text style={[theme.typography.heading3, { color: theme.colors.textPrimary, marginBottom: theme.spacing.md }]}>
+              Quick Call
+            </Text>
+            <View style={styles.quickCallGrid}>
+              {emergencyNumbers.map((service) => {
+                const IconComponent = service.icon;
+                return (
+                  <Pressable
+                    key={service.number}
+                    onPress={() => callNumber(service.number, service.name)}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}
+                  >
+                    <Card style={styles.quickCallCard}>
+                      <View style={[styles.iconCircle, { backgroundColor: `${theme.colors.primary}10` }]}>
+                        <IconComponent size={24} color={theme.colors.primary} strokeWidth={2} />
+                      </View>
+                      <Text style={[theme.typography.label, { color: theme.colors.textPrimary, marginTop: theme.spacing.sm }]}>
+                        {service.name}
+                      </Text>
+                      <Text style={[theme.typography.heading3, { color: theme.colors.primary, marginTop: theme.spacing.xs }]}>
+                        {service.number}
+                      </Text>
+                    </Card>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
-        )}
 
-        {!isActivated && (
-          <View style={styles.infoSection}>
-            <Text style={[styles.infoTitle, { color: colors.text }]}>When activated:</Text>
-            <View style={styles.infoItem}>
-              <View style={[styles.infoDot, { backgroundColor: colors.textSecondary }]} />
-              <Text style={[styles.infoText, { color: colors.textSecondary }]}>Shares current location</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <View style={[styles.infoDot, { backgroundColor: colors.textSecondary }]} />
-              <Text style={[styles.infoText, { color: colors.textSecondary }]}>Alerts emergency contacts</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <View style={[styles.infoDot, { backgroundColor: colors.textSecondary }]} />
-              <Text style={[styles.infoText, { color: colors.textSecondary }]}>Stores SOS history in your account</Text>
-            </View>
+          {/* When Activated Section */}
+          <View style={styles.section}>
+            <Text style={[theme.typography.heading3, { color: theme.colors.textPrimary, marginBottom: theme.spacing.md }]}>
+              When activated
+            </Text>
+            <Card>
+              <View style={styles.infoItem}>
+                <View style={[styles.checkCircle, { backgroundColor: `${theme.colors.success}15` }]}>
+                  <Check size={16} color={theme.colors.success} strokeWidth={3} />
+                </View>
+                <View style={styles.infoTextContainer}>
+                  <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]}>
+                    Shares current location
+                  </Text>
+                  <Text style={[theme.typography.caption, { color: theme.colors.textMuted, marginTop: 2 }]}>
+                    Real-time GPS coordinates
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+
+              <View style={styles.infoItem}>
+                <View style={[styles.checkCircle, { backgroundColor: `${theme.colors.success}15` }]}>
+                  <Check size={16} color={theme.colors.success} strokeWidth={3} />
+                </View>
+                <View style={styles.infoTextContainer}>
+                  <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]}>
+                    Alerts emergency contacts
+                  </Text>
+                  <Text style={[theme.typography.caption, { color: theme.colors.textMuted, marginTop: 2 }]}>
+                    SMS with location link
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+
+              <View style={styles.infoItem}>
+                <View style={[styles.checkCircle, { backgroundColor: `${theme.colors.success}15` }]}>
+                  <Check size={16} color={theme.colors.success} strokeWidth={3} />
+                </View>
+                <View style={styles.infoTextContainer}>
+                  <Text style={[theme.typography.body, { color: theme.colors.textPrimary }]}>
+                    Stores SOS history
+                  </Text>
+                  <Text style={[theme.typography.caption, { color: theme.colors.textMuted, marginTop: 2 }]}>
+                    Saved in your account
+                  </Text>
+                </View>
+              </View>
+            </Card>
           </View>
-        )}
+
+          {/* Bottom spacing */}
+          <View style={{ height: 100 }} />
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -222,130 +287,87 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    borderBottomWidth: 1,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '400',
-    marginBottom: 4,
-    letterSpacing: -0.3,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    fontWeight: '400',
-  },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+  },
+  header: {
+    marginBottom: 32,
+  },
+  sosContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    marginVertical: 40,
+    height: BUTTON_SIZE + 100,
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
+    borderRadius: BUTTON_SIZE / 2,
+  },
+  progressRingContainer: {
+    position: 'absolute',
   },
   sosButton: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: '#E85D5D',
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
+    borderRadius: BUTTON_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    zIndex: 10,
   },
   sosText: {
     fontSize: 48,
-    fontWeight: '700',
+    fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 2,
+    letterSpacing: 4,
   },
   sosSubtext: {
-    fontSize: 13,
+    fontSize: 14,
+    fontWeight: '600',
     color: '#FFFFFF',
     marginTop: 8,
     opacity: 0.9,
-    fontWeight: '400',
   },
-  countdownContainer: {
-    alignItems: 'center',
+  section: {
+    marginBottom: 32,
   },
-  countdownLabel: {
-    fontSize: 20,
-    marginBottom: 20,
-    fontWeight: '400',
-  },
-  countdownNumber: {
-    fontSize: 96,
-    fontWeight: '700',
-    color: '#E85D5D',
-    marginBottom: 40,
-  },
-  cancelButton: {
-    paddingHorizontal: 48,
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-  },
-  cancelButtonText: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: '#E85D5D',
-  },
-  quickActions: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '400',
-    marginBottom: 16,
-  },
-  actionsGrid: {
+  quickCallGrid: {
     flexDirection: 'row',
     gap: 12,
   },
-  actionCard: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 16,
+  quickCallCard: {
     alignItems: 'center',
-    borderWidth: 1,
+    paddingVertical: 20,
   },
-  actionName: {
-    fontSize: 14,
-    fontWeight: '400',
-    marginBottom: 4,
-  },
-  actionNumber: {
-    fontSize: 20,
-    fontWeight: '400',
-    color: '#5B8DEE',
-  },
-  infoSection: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-  },
-  infoTitle: {
-    fontSize: 15,
-    fontWeight: '400',
-    marginBottom: 12,
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   infoItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    paddingVertical: 12,
   },
-  infoDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  checkCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
   },
-  infoText: {
-    fontSize: 14,
-    fontWeight: '400',
+  infoTextContainer: {
+    flex: 1,
+  },
+  divider: {
+    height: 1,
+    marginVertical: 8,
   },
 });
