@@ -175,7 +175,6 @@ export default function ReportsScreen({ navigation, route }: any) {
   const [location, setLocation] = useState('Current Location');
   const [coordinates, setCoordinates] = useState(DEFAULT_LOCATION);
   const [description, setDescription] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [severityRating, setSeverityRating] = useState(5);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
@@ -257,7 +256,6 @@ export default function ReportsScreen({ navigation, route }: any) {
           onPress: () => {
             setSelectedCategory(null);
             setDescription('');
-            setIsAnonymous(false);
             setPhotos([]);
             setSeverityRating(5);
           },
@@ -466,28 +464,6 @@ export default function ReportsScreen({ navigation, route }: any) {
           <Text style={[theme.typography.caption, { color: theme.colors.textMuted, marginTop: theme.spacing.sm }]}>
             You can add up to 4 photos
           </Text>
-        </View>
-
-        {/* Anonymous */}
-        <View style={styles.section}>
-          <Card>
-            <View style={styles.anonymousRow}>
-              <View style={styles.anonymousTextContainer}>
-                <Text style={[theme.typography.label, { color: theme.colors.textPrimary }]}>
-                  Report Anonymously
-                </Text>
-                <Text style={[theme.typography.caption, { color: theme.colors.textMuted, marginTop: 2 }]}>
-                  Your identity will remain hidden
-                </Text>
-              </View>
-              <Switch
-                value={isAnonymous}
-                onValueChange={setIsAnonymous}
-                trackColor={{ false: theme.colors.border, true: `${theme.colors.primary}60` }}
-                thumbColor={isAnonymous ? theme.colors.primary : '#f4f3f4'}
-              />
-            </View>
-          </Card>
         </View>
 
         {/* Submit Button */}

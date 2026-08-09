@@ -423,7 +423,7 @@ export default function MapScreen({ navigation, route }: any) {
             }, 1500);
           }}
         >
-          <MaterialCommunityIcons name="navigation" size={28} color="#FFF" />
+          <MaterialCommunityIcons name="navigation" size={20} color="#FFF" />
         </TouchableOpacity>
       )}
 
@@ -503,7 +503,12 @@ export default function MapScreen({ navigation, route }: any) {
           </View>
 
           {/* Content */}
-          <View style={styles.sheetContent}>
+          <ScrollView 
+            style={styles.sheetContent}
+            contentContainerStyle={styles.sheetContentContainer}
+            showsVerticalScrollIndicator={true}
+            bounces={true}
+          >
             {/* COLLAPSED: Only show score */}
             {!isExpanded && (
               <View style={[styles.scoreCardMinimal, { backgroundColor: colors.surface }]}>
@@ -590,7 +595,7 @@ export default function MapScreen({ navigation, route }: any) {
                 )}
               </>
             )}
-          </View>
+          </ScrollView>
         </Animated.View>
       )}
     </View>
@@ -711,22 +716,22 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
-  // Find route button
+  // Find route button - 30% smaller, positioned below settings
   fabStartButton: {
     position: 'absolute',
-    bottom: BOTTOM_SHEET_MIN_HEIGHT + -5,
-    right: 20,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    top: 100, // Below settings button (settings is at top: 40)
+    right: 16,
+    width: 45, // 30% smaller (was 64)
+    height: 45, // 30% smaller (was 64)
+    borderRadius: 22.5,
     backgroundColor: '#1A73E8',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1A73E8',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
     zIndex: 10,
   },
 
@@ -770,7 +775,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
-    elevation: 16,
+    elevation: 20,
+    zIndex: 100, // Higher than route cards so they slide under
   },
   dragHandle: {
     alignItems: 'center',
@@ -785,7 +791,9 @@ const styles = StyleSheet.create({
   sheetContent: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingBottom: 31,
+  },
+  sheetContentContainer: {
+    paddingBottom: 40, // Extra padding at the bottom for scrolling
   },
 
   // Minimal score card (collapsed state)
@@ -963,34 +971,34 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   routeCard: {
-    width: 160,
-    borderRadius: 16,
-    padding: 12,
-    marginRight: 12,
+    width: 96, // 40% smaller (was 160)
+    borderRadius: 12,
+    padding: 8,
+    marginRight: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
   },
   recommendedBadge: {
     position: 'absolute',
-    top: -8,
-    right: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    top: -6,
+    right: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 2,
+    elevation: 2,
   },
   recommendedText: {
     color: '#FFF',
-    fontSize: 9,
+    fontSize: 7, // Smaller for compact card
     fontWeight: '900',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   routeCardContent: {
     flexDirection: 'row',
@@ -998,31 +1006,31 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   safetyIndicator: {
-    width: 6,
+    width: 4, // Thinner for compact card
     height: '100%',
-    borderRadius: 3,
-    minHeight: 60,
+    borderRadius: 2,
+    minHeight: 50, // Smaller minimum height
   },
   routeInfo: {
     flex: 1,
   },
   routeTitle: {
-    fontSize: 13,
+    fontSize: 11, // Smaller for compact card
     fontWeight: '800',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   routeSafety: {
-    fontSize: 15,
+    fontSize: 13, // Smaller for compact card
     fontWeight: '900',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   routeDetails: {
-    fontSize: 11,
+    fontSize: 9, // Smaller for compact card
     fontWeight: '600',
     marginBottom: 2,
   },
   routeWarnings: {
-    fontSize: 10,
+    fontSize: 8, // Smaller for compact card
     fontWeight: '700',
     marginTop: 2,
   },
