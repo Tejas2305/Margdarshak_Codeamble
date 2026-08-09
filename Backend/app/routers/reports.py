@@ -321,30 +321,33 @@ async def get_my_reports(
 ):
     offset = (page - 1) * limit
     result = await db.execute(
-        select(Report)
+        select(Report, Category.name.label("category_name"))
+        .join(Category, Report.category_id == Category.category_id)
         .where(Report.user_id == current_user.user_id)
         .order_by(Report.created_at.desc())
         .offset(offset)
         .limit(limit)
     )
-    reports = result.scalars().all()
+
+    report_rows = result.all()
 
     return [
         {
-            "report_id": r.report_id,
-            "category_id": r.category_id,
-            "user_rating": r.user_rating,
-            "computed_severity": r.computed_severity,
-            "description": r.description,
-            "latitude": r.latitude,
-            "longitude": r.longitude,
-            "status": r.status,
-            "upvotes": r.upvotes,
-            "downvotes": r.downvotes,
-            "confidence_score": r.confidence_score,
-            "created_at": r.created_at,
+            "report_id": r.Report.report_id,
+            "category_id": r.Report.category_id,
+            "category_name": r.category_name,
+            "user_rating": r.Report.user_rating,
+            "computed_severity": r.Report.computed_severity,
+            "description": r.Report.description,
+            "latitude": r.Report.latitude,
+            "longitude": r.Report.longitude,
+            "status": r.Report.status,
+            "upvotes": r.Report.upvotes,
+            "downvotes": r.Report.downvotes,
+            "confidence_score": r.Report.confidence_score,
+            "created_at": r.Report.created_at,
         }
-        for r in reports
+        for r in report_rows
     ]
 
 
