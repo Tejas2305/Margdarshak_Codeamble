@@ -12,12 +12,14 @@ from app.schemas.map import (
     RouteSafetyRequest,
     RouteSafetyResponse,
     SearchResponse,
+    PlaceResult,
+    SearchPlaceResponse,
 )
 from app.utils.auth import get_current_user
 from app.services.spatial_service import (
     find_nearest_road_segment,
     evaluate_osrm_routes,
-    search_places,
+    search_places as search_places_service,
 )
 
 router = APIRouter(
@@ -62,7 +64,7 @@ async def search_location(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    results = await search_places(query)
+    results = await search_places_service(query)
     return SearchResponse(query=query, results=results)
 
 
