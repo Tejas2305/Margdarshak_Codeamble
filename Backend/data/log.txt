@@ -559,3 +559,156 @@
 
 [2026-08-09T05:14:04] [warn] could not lock shared memory to RAM
 [2026-08-09 05:14:08] [OSRM Updater] osrm-datastore refreshed shared-memory metric for dataset 'pune' with return code 0
+[2026-08-09 05:39:51] [OSRM Export] Wrote 8958 node penalty records to '/mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv'.
+[2026-08-09 05:39:51] [OSRM Updater] Pipeline execution completed. Dirty segments updated: 0, CSV records: 8958.
+[2026-08-09 05:39:51] [OSRM Updater] Executing osrm-customize on '/mnt/d/My_Software/OSRM/data/pune-district.osrm' using '--segment-speed-file /mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv'...
+[2026-08-09 05:39:58] [osrm-customize output]
+[2026-08-09T05:39:54] [info] Loaded /mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv with 8958values
+[2026-08-09T05:39:54] [info] In total loaded 1 file(s) with a total of 1782 unique values
+[2026-08-09T05:39:54] [info] Used 3691452 speeds from LUA profile or input map
+[2026-08-09T05:39:54] [info] Used 1782 speeds from /mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv
+[2026-08-09T05:39:55] [info] Updating segment data took 1197.19ms.
+[2026-08-09T05:39:55] [info] In total loaded 0 file(s) with a total of 0 unique values
+[2026-08-09T05:39:55] [info] Done reading edges in 4233.35ms.
+[2026-08-09T05:39:56] [info] Loaded edge based graph: 2498258 edges, 655870 nodes
+[2026-08-09T05:39:56] [info] Loading partition data took 4.74769 seconds
+[2026-08-09T05:39:56] [info] Cells customization took 0.405911 seconds
+[2026-08-09T05:39:56] [info] Cells statistics per level
+[2026-08-09T05:39:56] [info] Level 1 #cells 3298 #boundary nodes 54533, sources: avg. 10, destinations: avg. 15, entries: 707199 (5657592 bytes)
+[2026-08-09T05:39:56] [info] Level 2 #cells 240 #boundary nodes 8822, sources: avg. 24, destinations: avg. 34, entries: 243997 (1951976 bytes)
+[2026-08-09T05:39:56] [info] Level 3 #cells 16 #boundary nodes 1225, sources: avg. 51, destinations: avg. 70, entries: 69349 (554792 bytes)
+[2026-08-09T05:39:56] [info] Level 4 #cells 1 #boundary nodes 0, sources: avg. 0, destinations: avg. 0, entries: 0 (0 bytes)
+[2026-08-09T05:39:56] [info] Unreachable nodes statistics per level
+[2026-08-09T05:39:56] [info] Unreachable nodes statistics per level
+[2026-08-09T05:39:56] [info] Unreachable nodes statistics per level
+[2026-08-09T05:39:56] [info] Unreachable nodes statistics per level
+[2026-08-09T05:39:57] [info] MLD customization writing took 1.05287 seconds
+[2026-08-09T05:39:58] [info] Graph writing took 0.876235 seconds
+[2026-08-09T05:39:58] [info] RAM: peak bytes used: 224571392
+
+[2026-08-09T05:39:54] [warn] Speed values were used to update 1782 segments for 'routability' profile
+[2026-08-09T05:39:56] [warn] Level 1 unreachable boundary nodes per cell: 0.000303214 sources, 0 destinations
+[2026-08-09T05:39:56] [warn] Level 1 unreachable boundary nodes per cell: 0.0257732 sources, 0.0309278 destinations
+[2026-08-09T05:39:56] [warn] Level 2 unreachable boundary nodes per cell: 0.0875 sources, 0.0958333 destinations
+[2026-08-09T05:39:56] [warn] Level 3 unreachable boundary nodes per cell: 0.1875 sources, 0.1875 destinations
+[2026-08-09T05:39:56] [warn] Level 1 unreachable boundary nodes per cell: 0.0118253 sources, 0.00970285 destinations
+[2026-08-09T05:39:56] [warn] Level 2 unreachable boundary nodes per cell: 0.075 sources, 0.05 destinations
+[2026-08-09T05:39:56] [warn] Level 3 unreachable boundary nodes per cell: 0.1875 sources, 0.125 destinations
+[2026-08-09T05:39:56] [warn] Level 1 unreachable boundary nodes per cell: 0.000303214 sources, 0 destinations
+[2026-08-09 05:39:58] [OSRM Updater] osrm-customize finished with return code 0
+[2026-08-09 05:39:58] [OSRM Updater] Executing osrm-datastore for shared-memory dataset 'pune' on '/mnt/d/My_Software/OSRM/data/pune-district.osrm'...
+[2026-08-09 05:40:02] [osrm-datastore output]
+[2026-08-09T05:39:58] [info] Using shared memory lock directory: "/dev/shm/osrm-1000"
+[2026-08-09T05:39:59] [info] Data layout has a size of 2248 bytes
+[2026-08-09T05:39:59] [info] Allocating shared memory of 149592638 bytes
+[2026-08-09T05:40:02] [info] All data loaded. Notify all clients about new data in:
+[2026-08-09T05:40:02] [info] pune/updatable	0
+[2026-08-09T05:40:02] [info] Marking old shared memory region 1 for removal... 
+[2026-08-09T05:40:02] [info] waiting for clients to detach...
+[2026-08-09T05:40:02] [info] ok.
+[2026-08-09T05:40:02] [info] All clients switched.
+
+[2026-08-09T05:39:59] [warn] could not lock shared memory to RAM
+[2026-08-09 05:40:02] [OSRM Updater] osrm-datastore refreshed shared-memory metric for dataset 'pune' with return code 0
+[2026-08-09 09:51:57] [OSRM Export] Wrote 9122 node penalty records to '/mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv'.
+[2026-08-09 09:51:57] [OSRM Updater] Pipeline execution completed. Dirty segments updated: 0, CSV records: 9122.
+[2026-08-09 09:51:57] [OSRM Updater] Executing osrm-customize on '/mnt/d/My_Software/OSRM/data/pune-district.osrm' using '--segment-speed-file /mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv'...
+[2026-08-09 09:52:06] [osrm-customize output]
+[2026-08-09T09:52:00] [info] Loaded /mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv with 9122values
+[2026-08-09T09:52:00] [info] In total loaded 1 file(s) with a total of 1838 unique values
+[2026-08-09T09:52:00] [info] Used 3691396 speeds from LUA profile or input map
+[2026-08-09T09:52:00] [info] Used 1838 speeds from /mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv
+[2026-08-09T09:52:02] [info] Updating segment data took 1543.2ms.
+[2026-08-09T09:52:02] [info] In total loaded 0 file(s) with a total of 0 unique values
+[2026-08-09T09:52:02] [info] Done reading edges in 4135.21ms.
+[2026-08-09T09:52:02] [info] Loaded edge based graph: 2498258 edges, 655870 nodes
+[2026-08-09T09:52:02] [info] Loading partition data took 4.99525 seconds
+[2026-08-09T09:52:03] [info] Cells customization took 0.560732 seconds
+[2026-08-09T09:52:03] [info] Cells statistics per level
+[2026-08-09T09:52:03] [info] Level 1 #cells 3298 #boundary nodes 54533, sources: avg. 10, destinations: avg. 15, entries: 707199 (5657592 bytes)
+[2026-08-09T09:52:03] [info] Level 2 #cells 240 #boundary nodes 8822, sources: avg. 24, destinations: avg. 34, entries: 243997 (1951976 bytes)
+[2026-08-09T09:52:03] [info] Level 3 #cells 16 #boundary nodes 1225, sources: avg. 51, destinations: avg. 70, entries: 69349 (554792 bytes)
+[2026-08-09T09:52:03] [info] Level 4 #cells 1 #boundary nodes 0, sources: avg. 0, destinations: avg. 0, entries: 0 (0 bytes)
+[2026-08-09T09:52:03] [info] Unreachable nodes statistics per level
+[2026-08-09T09:52:03] [info] Unreachable nodes statistics per level
+[2026-08-09T09:52:03] [info] Unreachable nodes statistics per level
+[2026-08-09T09:52:03] [info] Unreachable nodes statistics per level
+[2026-08-09T09:52:04] [info] MLD customization writing took 1.22127 seconds
+[2026-08-09T09:52:06] [info] Graph writing took 1.44581 seconds
+[2026-08-09T09:52:06] [info] RAM: peak bytes used: 224567296
+
+[2026-08-09T09:52:00] [warn] Speed values were used to update 1838 segments for 'routability' profile
+[2026-08-09T09:52:03] [warn] Level 1 unreachable boundary nodes per cell: 0.000303214 sources, 0 destinations
+[2026-08-09T09:52:03] [warn] Level 1 unreachable boundary nodes per cell: 0.0257732 sources, 0.0309278 destinations
+[2026-08-09T09:52:03] [warn] Level 2 unreachable boundary nodes per cell: 0.0875 sources, 0.0958333 destinations
+[2026-08-09T09:52:03] [warn] Level 3 unreachable boundary nodes per cell: 0.1875 sources, 0.1875 destinations
+[2026-08-09T09:52:03] [warn] Level 1 unreachable boundary nodes per cell: 0.0118253 sources, 0.00970285 destinations
+[2026-08-09T09:52:03] [warn] Level 2 unreachable boundary nodes per cell: 0.075 sources, 0.05 destinations
+[2026-08-09T09:52:03] [warn] Level 3 unreachable boundary nodes per cell: 0.1875 sources, 0.125 destinations
+[2026-08-09T09:52:03] [warn] Level 1 unreachable boundary nodes per cell: 0.000303214 sources, 0 destinations
+[2026-08-09 09:52:06] [OSRM Updater] osrm-customize finished with return code 0
+[2026-08-09 09:52:06] [OSRM Updater] Executing osrm-datastore for shared-memory dataset 'pune' on '/mnt/d/My_Software/OSRM/data/pune-district.osrm'...
+[2026-08-09 09:52:12] [osrm-datastore output]
+[2026-08-09T09:52:06] [info] Using shared memory lock directory: "/dev/shm/osrm-1000"
+[2026-08-09T09:52:07] [info] Data layout has a size of 2248 bytes
+[2026-08-09T09:52:07] [info] Allocating shared memory of 149592638 bytes
+[2026-08-09T09:52:12] [info] All data loaded. Notify all clients about new data in:
+[2026-08-09T09:52:12] [info] pune/updatable	1
+[2026-08-09T09:52:12] [info] Marking old shared memory region 0 for removal... 
+[2026-08-09T09:52:12] [info] waiting for clients to detach...
+[2026-08-09T09:52:12] [info] ok.
+[2026-08-09T09:52:12] [info] All clients switched.
+
+[2026-08-09T09:52:07] [warn] could not lock shared memory to RAM
+[2026-08-09 09:52:12] [OSRM Updater] osrm-datastore refreshed shared-memory metric for dataset 'pune' with return code 0
+[2026-08-09 10:07:56] [OSRM Export] Wrote 8958 node penalty records to '/mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv'.
+[2026-08-09 10:07:56] [OSRM Updater] Pipeline execution completed. Dirty segments updated: 0, CSV records: 8958.
+[2026-08-09 10:07:56] [OSRM Updater] Executing osrm-customize on '/mnt/d/My_Software/OSRM/data/pune-district.osrm' using '--segment-speed-file /mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv'...
+[2026-08-09 10:08:10] [osrm-customize output]
+[2026-08-09T10:08:02] [info] Loaded /mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv with 8958values
+[2026-08-09T10:08:02] [info] In total loaded 1 file(s) with a total of 1782 unique values
+[2026-08-09T10:08:02] [info] Used 3691452 speeds from LUA profile or input map
+[2026-08-09T10:08:02] [info] Used 1782 speeds from /mnt/e/Hackathons/Codeamble/Margadarshak/Backend/data/penalty.csv
+[2026-08-09T10:08:05] [info] Updating segment data took 2533.81ms.
+[2026-08-09T10:08:05] [info] In total loaded 0 file(s) with a total of 0 unique values
+[2026-08-09T10:08:05] [info] Done reading edges in 8116.51ms.
+[2026-08-09T10:08:05] [info] Loaded edge based graph: 2498258 edges, 655870 nodes
+[2026-08-09T10:08:05] [info] Loading partition data took 8.80965 seconds
+[2026-08-09T10:08:06] [info] Cells customization took 0.46058 seconds
+[2026-08-09T10:08:06] [info] Cells statistics per level
+[2026-08-09T10:08:06] [info] Level 1 #cells 3298 #boundary nodes 54533, sources: avg. 10, destinations: avg. 15, entries: 707199 (5657592 bytes)
+[2026-08-09T10:08:06] [info] Level 2 #cells 240 #boundary nodes 8822, sources: avg. 24, destinations: avg. 34, entries: 243997 (1951976 bytes)
+[2026-08-09T10:08:06] [info] Level 3 #cells 16 #boundary nodes 1225, sources: avg. 51, destinations: avg. 70, entries: 69349 (554792 bytes)
+[2026-08-09T10:08:06] [info] Level 4 #cells 1 #boundary nodes 0, sources: avg. 0, destinations: avg. 0, entries: 0 (0 bytes)
+[2026-08-09T10:08:06] [info] Unreachable nodes statistics per level
+[2026-08-09T10:08:06] [info] Unreachable nodes statistics per level
+[2026-08-09T10:08:06] [info] Unreachable nodes statistics per level
+[2026-08-09T10:08:06] [info] Unreachable nodes statistics per level
+[2026-08-09T10:08:08] [info] MLD customization writing took 2.37975 seconds
+[2026-08-09T10:08:10] [info] Graph writing took 1.72415 seconds
+[2026-08-09T10:08:10] [info] RAM: peak bytes used: 224899072
+
+[2026-08-09T10:08:02] [warn] Speed values were used to update 1782 segments for 'routability' profile
+[2026-08-09T10:08:06] [warn] Level 1 unreachable boundary nodes per cell: 0.000303214 sources, 0 destinations
+[2026-08-09T10:08:06] [warn] Level 1 unreachable boundary nodes per cell: 0.0257732 sources, 0.0309278 destinations
+[2026-08-09T10:08:06] [warn] Level 2 unreachable boundary nodes per cell: 0.0875 sources, 0.0958333 destinations
+[2026-08-09T10:08:06] [warn] Level 3 unreachable boundary nodes per cell: 0.1875 sources, 0.1875 destinations
+[2026-08-09T10:08:06] [warn] Level 1 unreachable boundary nodes per cell: 0.0118253 sources, 0.00970285 destinations
+[2026-08-09T10:08:06] [warn] Level 2 unreachable boundary nodes per cell: 0.075 sources, 0.05 destinations
+[2026-08-09T10:08:06] [warn] Level 3 unreachable boundary nodes per cell: 0.1875 sources, 0.125 destinations
+[2026-08-09T10:08:06] [warn] Level 1 unreachable boundary nodes per cell: 0.000303214 sources, 0 destinations
+[2026-08-09 10:08:10] [OSRM Updater] osrm-customize finished with return code 0
+[2026-08-09 10:08:10] [OSRM Updater] Executing osrm-datastore for shared-memory dataset 'pune' on '/mnt/d/My_Software/OSRM/data/pune-district.osrm'...
+[2026-08-09 10:08:13] [osrm-datastore output]
+[2026-08-09T10:08:11] [info] Using shared memory lock directory: "/dev/shm/osrm-1000"
+[2026-08-09T10:08:11] [info] Data layout has a size of 2248 bytes
+[2026-08-09T10:08:11] [info] Allocating shared memory of 149592638 bytes
+[2026-08-09T10:08:13] [info] All data loaded. Notify all clients about new data in:
+[2026-08-09T10:08:13] [info] pune/updatable	0
+[2026-08-09T10:08:13] [info] Marking old shared memory region 1 for removal... 
+[2026-08-09T10:08:13] [info] waiting for clients to detach...
+[2026-08-09T10:08:13] [info] ok.
+[2026-08-09T10:08:13] [info] All clients switched.
+
+[2026-08-09T10:08:11] [warn] could not lock shared memory to RAM
+[2026-08-09 10:08:13] [OSRM Updater] osrm-datastore refreshed shared-memory metric for dataset 'pune' with return code 0
